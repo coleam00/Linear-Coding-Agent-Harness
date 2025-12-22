@@ -1,0 +1,38 @@
+[project]
+name = "linear-coding-agent-harness"
+version = "0.1.0"
+description = "A Python harness for running long-running autonomous coding agents using the Claude Agent SDK"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "claude-code-sdk>=0.0.25",
+]
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.35",
+]
+
+[tool.poe]
+executor.type = "uv"
+envfile = ".env"
+
+[tool.poe.tasks]
+# Main agent tasks
+run = { cmd = "python autonomous_agent_demo.py --project-dir ./my_project", help = "Run the autonomous agent with default settings" }
+run-limited = { cmd = "python autonomous_agent_demo.py --project-dir ./my_project --max-iterations 3", help = "Run agent with limited iterations (for testing)" }
+
+# Testing
+test = { cmd = "python test_security.py", help = "Run security hook tests" }
+
+# Development helpers
+check-env = { shell = "echo 'Checking environment...' && python -c \"import os; print('CLAUDE_CODE_OAUTH_TOKEN:', 'set' if os.environ.get('CLAUDE_CODE_OAUTH_TOKEN') else 'NOT SET'); print('LINEAR_API_KEY:', 'set' if os.environ.get('LINEAR_API_KEY') else 'NOT SET')\"", help = "Check if required environment variables are set" }
+
+[tool.poe.tasks.agent]
+help = "Run autonomous agent with custom options"
+cmd = "python autonomous_agent_demo.py"
+args = [
+    { name = "project-dir", options = ["--project-dir", "-p"], default = "./my_project", help = "Directory for the project" },
+    { name = "max-iterations", options = ["--max-iterations", "-m"], help = "Maximum number of agent iterations" },
+    { name = "model", options = ["--model"], default = "claude-opus-4-5-20251101", help = "Claude model to use" },
+]

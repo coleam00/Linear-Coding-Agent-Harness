@@ -13,52 +13,78 @@ A minimal harness demonstrating long-running autonomous coding with the Claude A
 
 ## Prerequisites
 
-### 1. Install Claude Code CLI and Python SDK
+### 1. Install Claude Code CLI and uv
 
 ```bash
 # Install Claude Code CLI (latest version required)
 npm install -g @anthropic-ai/claude-code
 
-# Install Python dependencies
-pip install -r requirements.txt
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Set Up Authentication
+### 2. Install Project Dependencies
 
-You need two authentication tokens:
-
-**Claude Code OAuth Token:**
 ```bash
-# Generate the token using Claude Code CLI
-claude setup-token
+# Clone the repository
+git clone <repository-url>
+cd linear-coding-agent-harness
 
-# Set the environment variable
-export CLAUDE_CODE_OAUTH_TOKEN='your-oauth-token-here'
+# Install dependencies (creates .venv automatically)
+uv sync --group dev
 ```
 
-**Linear API Key:**
+### 3. Set Up Authentication
+
+Copy the environment template and fill in your credentials:
+
 ```bash
-# Get your API key from: https://linear.app/YOUR-TEAM/settings/api
-export LINEAR_API_KEY='lin_api_xxxxxxxxxxxxx'
+cp .env.example .env
 ```
 
-### 3. Verify Installation
+Then edit `.env` with your values:
 
 ```bash
-claude --version  # Should be latest version
-pip show claude-code-sdk  # Check SDK is installed
+# Claude Code OAuth Token - Generate with: claude setup-token
+CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token-here
+
+# Linear API Key - Get from: https://linear.app/YOUR-TEAM/settings/api
+LINEAR_API_KEY=lin_api_xxxxxxxxxxxxx
+```
+
+The `.env` file is automatically loaded by poe tasks.
+
+### 4. Verify Installation
+
+```bash
+claude --version              # Should be latest version
+uv run poe check-env          # Check environment variables
 ```
 
 ## Quick Start
 
 ```bash
-python autonomous_agent_demo.py --project-dir ./my_project
+# Run with default settings
+uv run poe run
+
+# Run with limited iterations (for testing)
+uv run poe run-limited
+
+# Run with custom options
+uv run poe agent --project-dir ./my_project --max-iterations 5
 ```
 
-For testing with limited iterations:
-```bash
-python autonomous_agent_demo.py --project-dir ./my_project --max-iterations 3
-```
+## Available Tasks
+
+Run `uv run poe --help` to see all available tasks:
+
+| Task | Description |
+|------|-------------|
+| `poe run` | Run the autonomous agent with default settings |
+| `poe run-limited` | Run agent with limited iterations (for testing) |
+| `poe agent` | Run agent with custom options (--project-dir, --max-iterations, --model) |
+| `poe test` | Run security hook tests |
+| `poe check-env` | Check if required environment variables are set |
 
 ## How It Works
 
@@ -123,28 +149,36 @@ Instead of local text files, agents communicate through:
 
 ## Command Line Options
 
+When using `poe agent`:
+
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--project-dir` | Directory for the project | `./autonomous_demo_project` |
-| `--max-iterations` | Max agent iterations | Unlimited |
+| `--project-dir`, `-p` | Directory for the project | `./my_project` |
+| `--max-iterations`, `-m` | Max agent iterations | Unlimited |
 | `--model` | Claude model to use | `claude-opus-4-5-20251101` |
 
 ## Project Structure
 
-```
-linear-agent-harness/
-├── autonomous_agent_demo.py  # Main entry point
-├── agent.py                  # Agent session logic
-├── client.py                 # Claude SDK + MCP client configuration
-├── security.py               # Bash command allowlist and validation
-├── progress.py               # Progress tracking utilities
-├── prompts.py                # Prompt loading utilities
-├── linear_config.py          # Linear configuration constants
-├── prompts/
-│   ├── app_spec.txt          # Application specification
-│   ├── initializer_prompt.md # First session prompt (creates Linear issues)
-│   └── coding_prompt.md      # Continuation session prompt (works issues)
-└── requirements.txt          # Python dependencies
+```text
+linear-coding-agent-harness/
+├── pyproject.toml           # uv project config & poe tasks
+├── uv.lock                  # Lockfile (auto-generated)
+├── .python-version          # Python version pin (3.12)
+├── .env.example             # Environment template
+├── .env                     # Your credentials (git-ignored)
+├── .venv/                   # Virtual environment (auto-created)
+├── autonomous_agent_demo.py # Main entry point
+├── agent.py                 # Agent session logic
+├── client.py                # Claude SDK + MCP client configuration
+├── security.py              # Bash command allowlist and validation
+├── progress.py              # Progress tracking utilities
+├── prompts.py               # Prompt loading utilities
+├── linear_config.py         # Linear configuration constants
+├── test_security.py         # Security hook tests
+└── prompts/
+    ├── app_spec.txt         # Application specification
+    ├── initializer_prompt.md # First session prompt (creates Linear issues)
+    └── coding_prompt.md     # Continuation session prompt (works issues)
 ```
 
 ## Generated Project Structure
@@ -205,6 +239,15 @@ Edit `prompts/initializer_prompt.md` and change "50 issues" to your desired coun
 
 Edit `security.py` to add or remove commands from `ALLOWED_COMMANDS`.
 
+### Adding New Poe Tasks
+
+Edit `pyproject.toml` to add new tasks:
+
+```toml
+[tool.poe.tasks]
+my-task = { cmd = "python my_script.py", help = "Description of my task" }
+```
+
 ## Troubleshooting
 
 **"CLAUDE_CODE_OAUTH_TOKEN not set"**
@@ -230,6 +273,22 @@ Open your Linear workspace to see:
 - Real-time status changes (Todo → In Progress → Done)
 - Implementation comments on each issue
 - Session summaries on the META issue
+
+## Development
+
+```bash
+# Install dev dependencies
+uv sync --group dev
+
+# Run tests
+uv run poe test
+
+# Add a new dependency
+uv add <package-name>
+
+# Add a dev dependency
+uv add --group dev <package-name>
+```
 
 ## License
 

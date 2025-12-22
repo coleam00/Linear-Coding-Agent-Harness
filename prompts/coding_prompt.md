@@ -53,6 +53,7 @@ contains the `project_id` and `team_id` you should use for all Linear queries.
 ### STEP 3: START SERVERS (IF NOT RUNNING)
 
 If `init.sh` exists, run it:
+
 ```bash
 chmod +x init.sh
 ./init.sh
@@ -71,26 +72,29 @@ Use `mcp__linear__list_issues` with the project ID and status "Done" to find 1-2
 completed features that are core to the app's functionality.
 
 Test these through the browser using Puppeteer:
+
 - Navigate to the feature
 - Verify it still works as expected
 - Take screenshots to confirm
 
 **If you find ANY issues (functional or visual):**
+
 - Use `mcp__linear__update_issue` to set status back to "In Progress"
 - Add a comment explaining what broke
 - Fix the issue BEFORE moving to new features
 - This includes UI bugs like:
-  * White-on-white text or poor contrast
-  * Random characters displayed
-  * Incorrect timestamps
-  * Layout issues or overflow
-  * Buttons too close together
-  * Missing hover states
-  * Console errors
+  - White-on-white text or poor contrast
+  - Random characters displayed
+  - Incorrect timestamps
+  - Layout issues or overflow
+  - Buttons too close together
+  - Missing hover states
+  - Console errors
 
 ### STEP 5: SELECT NEXT ISSUE TO WORK ON
 
 Use `mcp__linear__list_issues` with the project ID from `.linear_project.json`:
+
 - Filter by `status`: "Todo"
 - Sort by priority (1=urgent is highest)
 - `limit`: 5
@@ -100,6 +104,7 @@ Review the highest-priority unstarted issues and select ONE to work on.
 ### STEP 6: CLAIM THE ISSUE
 
 Before starting work, use `mcp__linear__update_issue` to:
+
 - Set the issue's `status` to "In Progress"
 
 This signals to any other agents (or humans watching) that this issue is being worked on.
@@ -118,18 +123,21 @@ Read the issue description for test steps and implement accordingly:
 **CRITICAL:** You MUST verify features through the actual UI.
 
 Use browser automation tools:
+
 - `mcp__puppeteer__puppeteer_navigate` - Start browser and go to URL
 - `mcp__puppeteer__puppeteer_screenshot` - Capture screenshot
 - `mcp__puppeteer__puppeteer_click` - Click elements
 - `mcp__puppeteer__puppeteer_fill` - Fill form inputs
 
 **DO:**
+
 - Test through the UI with clicks and keyboard input
 - Take screenshots to verify visual appearance
 - Check for console errors in browser
 - Verify complete user workflows end-to-end
 
 **DON'T:**
+
 - Only test with curl commands (backend testing alone is insufficient)
 - Use JavaScript evaluation to bypass UI (no shortcuts)
 - Skip visual verification
@@ -140,6 +148,7 @@ Use browser automation tools:
 After thorough verification:
 
 1. **Add implementation comment** using `mcp__linear__create_comment`:
+
    ```markdown
    ## Implementation Complete
 
@@ -160,6 +169,7 @@ After thorough verification:
    - Set `status` to "Done"
 
 **ONLY update status to Done AFTER:**
+
 - All test steps in the issue description pass
 - Visual verification via screenshots
 - No console errors
@@ -168,6 +178,7 @@ After thorough verification:
 ### STEP 10: COMMIT YOUR PROGRESS
 
 Make a descriptive git commit:
+
 ```bash
 git add .
 git commit -m "Implement [feature name]
@@ -206,6 +217,7 @@ Add a comment to the "[META] Project Progress Tracker" issue with session summar
 ### STEP 12: END SESSION CLEANLY
 
 Before context fills up:
+
 1. Commit all working code
 2. If working on an issue you can't complete:
    - Add a comment explaining progress and what's left
@@ -219,16 +231,19 @@ Before context fills up:
 ## LINEAR WORKFLOW RULES
 
 **Status Transitions:**
+
 - Todo → In Progress (when you start working)
 - In Progress → Done (when verified complete)
 - Done → In Progress (only if regression found)
 
 **Comments Are Your Memory:**
+
 - Every implementation gets a detailed comment
 - Session handoffs happen via META issue comments
 - Comments are permanent - future agents will read them
 
 **NEVER:**
+
 - Delete or archive issues
 - Modify issue descriptions or test steps
 - Work on issues already "In Progress" by someone else
@@ -242,6 +257,7 @@ Before context fills up:
 **ALL testing must use browser automation tools.**
 
 Available Puppeteer tools:
+
 - `mcp__puppeteer__puppeteer_navigate` - Go to URL
 - `mcp__puppeteer__puppeteer_screenshot` - Capture screenshot
 - `mcp__puppeteer__puppeteer_click` - Click elements
@@ -260,16 +276,19 @@ Test like a human user with mouse and keyboard. Don't take shortcuts.
 This depends on the project phase:
 
 **Early phase (< 20% Done):** You may complete multiple issues per session when:
+
 - Setting up infrastructure/scaffolding that unlocks many issues at once
 - Fixing build issues that were blocking progress
 - Auditing existing code and marking already-implemented features as Done
 
 **Mid/Late phase (> 20% Done):** Slow down to **1-2 issues per session**:
+
 - Each feature now requires focused implementation and testing
 - Quality matters more than quantity
 - Clean handoffs are critical
 
 **After completing an issue, ask yourself:**
+
 1. Is the app in a stable, working state right now?
 2. Have I been working for a while? (You can't measure this precisely, but use judgment)
 3. Would this be a good stopping point for handoff?
@@ -291,6 +310,7 @@ than to start another issue and risk running out of context mid-implementation.
 **Priority:** Fix regressions before implementing new features
 
 **Quality Bar:**
+
 - Zero console errors
 - Polished UI matching the design in app_spec.txt
 - All features work end-to-end through the UI
