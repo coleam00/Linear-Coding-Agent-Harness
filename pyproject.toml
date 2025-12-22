@@ -11,6 +11,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "poethepoet>=0.35",
+    "pytest>=8.0",
 ]
 
 [tool.poe]
@@ -23,7 +24,8 @@ run = { cmd = "python autonomous_agent_demo.py --project-dir ./my_project", help
 run-limited = { cmd = "python autonomous_agent_demo.py --project-dir ./my_project --max-iterations 3", help = "Run agent with limited iterations (for testing)" }
 
 # Testing
-test = { cmd = "python test_security.py", help = "Run security hook tests" }
+test = { cmd = "pytest tests/ -v", help = "Run all pytest tests" }
+test-security = { cmd = "python test_security.py", help = "Run security hook tests" }
 
 # Development helpers
 check-env = { shell = "echo 'Checking environment...' && python -c \"import os; print('CLAUDE_CODE_OAUTH_TOKEN:', 'set' if os.environ.get('CLAUDE_CODE_OAUTH_TOKEN') else 'NOT SET'); print('LINEAR_API_KEY:', 'set' if os.environ.get('LINEAR_API_KEY') else 'NOT SET')\"", help = "Check if required environment variables are set" }

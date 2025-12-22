@@ -8,9 +8,8 @@ happens in Linear - this is your source of truth for what needs to be built.
 
 ### FIRST: Read the Project Specification
 
-Start by reading `app_spec.txt` in your working directory. This file contains
-the complete specification for what you need to build. Read it carefully
-before proceeding.
+Start by reading `./app_spec.txt`. This file contains the complete
+specification for what you need to build. Read it carefully before proceeding.
 
 ### SECOND: Set Up Linear Project
 
