@@ -18,6 +18,9 @@ dev = [
 executor.type = "uv"
 envfile = ".env"
 
+[tool.poe.env]
+PATH = "${HOME}/.claude/local:${PATH}"
+
 [tool.poe.tasks]
 # Main agent tasks
 run = { cmd = "python autonomous_agent_demo.py --project-dir ./my_project", help = "Run the autonomous agent with default settings" }
@@ -29,6 +32,7 @@ test-security = { cmd = "python test_security.py", help = "Run security hook tes
 
 # Development helpers
 check-env = { shell = "echo 'Checking environment...' && python -c \"import os; print('CLAUDE_CODE_OAUTH_TOKEN:', 'set' if os.environ.get('CLAUDE_CODE_OAUTH_TOKEN') else 'NOT SET'); print('LINEAR_API_KEY:', 'set' if os.environ.get('LINEAR_API_KEY') else 'NOT SET')\"", help = "Check if required environment variables are set" }
+check-claude = { shell = "which claude && claude --version", help = "Check if Claude CLI is available" }
 
 [tool.poe.tasks.agent]
 help = "Run autonomous agent with custom options"
