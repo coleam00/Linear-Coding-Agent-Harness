@@ -79,7 +79,7 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 def load_orchestrator_prompt() -> str:
     """Load the orchestrator system prompt."""
-    return (PROMPTS_DIR / "orchestrator_prompt.md").read_text()
+    return (PROMPTS_DIR / "orchestrator_prompt.md").read_text(encoding="utf-8")
 
 
 def create_security_settings() -> SecuritySettings:

@@ -36,7 +36,7 @@ def load_prompt(name: str) -> str:
         )
 
     try:
-        return prompt_path.read_text()
+        return prompt_path.read_text(encoding="utf-8")
     except IOError as e:
         raise IOError(
             f"Failed to read prompt file {prompt_path}: {e}\n"

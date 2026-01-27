@@ -69,7 +69,7 @@ def _get_model(agent_name: str) -> ModelOption:
 
 def _load_prompt(name: str) -> str:
     """Load a prompt file."""
-    return (PROMPTS_DIR / f"{name}.md").read_text()
+    return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
 
 
 OrchestratorModelOption = Literal["haiku", "sonnet", "opus"]
