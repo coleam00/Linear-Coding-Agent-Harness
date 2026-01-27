@@ -9,14 +9,15 @@ This is a multi-agent orchestrator harness using the Claude Agent SDK. A central
 ## Commands
 
 ```bash
-# Install uv (Python 3.10+ required)
+# Create and activate virtual environment (Python 3.10+ required)
+uv venv
 # Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+.venv\Scripts\activate
 # macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 # Authorize Arcade services (run once, or per-service)
 python authorize_arcade.py              # All services
@@ -25,16 +26,16 @@ python authorize_arcade.py github       # GitHub only
 python authorize_arcade.py slack        # Slack only
 
 # Run the orchestrator
-uv run python autonomous_agent_demo.py --project-dir my-app
+python autonomous_agent_demo.py --project-dir my-app
 
 # With custom output location
-uv run python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
+python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
 
 # Limit iterations for testing
-uv run python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
+python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
 
 # Use Opus for orchestrator
-uv run python autonomous_agent_demo.py --project-dir my-app --model opus
+python autonomous_agent_demo.py --project-dir my-app --model opus
 
 # Run security tests
 python test_security.py

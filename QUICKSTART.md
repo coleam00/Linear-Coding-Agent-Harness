@@ -5,7 +5,7 @@ Get the multi-agent orchestrator running in 5 minutes.
 ## Prerequisites
 
 - **Python 3.10+** with pip
-- **uv** (Python package runner)
+- **uv** (fast Python package manager) - [install instructions](https://docs.astral.sh/uv/getting-started/installation/)
 - **Node.js 18+** (for Puppeteer MCP server)
 - **Claude CLI** authenticated (`claude login`)
 - **Arcade account** at [arcade.dev](https://arcade.dev)
@@ -23,14 +23,15 @@ Optional:
 git clone https://github.com/dynamous/Linear-Coding-Agent-Harness.git
 cd Linear-Coding-Agent-Harness
 
-# Install uv (if not already installed)
+# Create and activate virtual environment
+uv venv
 # Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+.venv\Scripts\activate
 # macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+source .venv/bin/activate
 
 # Install Python dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 # Install Puppeteer MCP server globally
 npm install -g puppeteer-mcp-server
@@ -144,16 +145,16 @@ Brief description of the application.
 
 ```bash
 # Start a new project
-uv run python autonomous_agent_demo.py --project-dir my-app
+python autonomous_agent_demo.py --project-dir my-app
 
 # With custom output location
-uv run python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
+python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
 
 # Limit iterations for testing
-uv run python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
+python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
 
 # Use Opus for more capable orchestration
-uv run python autonomous_agent_demo.py --project-dir my-app --model opus
+python autonomous_agent_demo.py --project-dir my-app --model opus
 ```
 
 Generated projects are created in `./generations/<project-dir>/` by default.
