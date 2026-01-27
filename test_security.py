@@ -4,13 +4,17 @@ Security Hook Tests
 ===================
 
 Tests for the bash command security validation logic.
-Run with: python test_security.py
+Run with: uv run python test_security.py
 """
 
 import asyncio
 import sys
+from typing import cast
+
+from claude_agent_sdk import PreToolUseHookInput
 
 from security import (
+    ValidationResult,
     bash_security_hook,
     extract_commands,
     validate_chmod_command,
@@ -20,9 +24,20 @@ from security import (
 
 def test_hook(command: str, should_block: bool) -> bool:
     """Test a single command against the security hook."""
-    input_data = {"tool_name": "Bash", "tool_input": {"command": command}}
+    # Create a minimal PreToolUseHookInput for testing
+    input_data = cast(
+        PreToolUseHookInput,
+        {
+            "session_id": "test-session",
+            "transcript_path": "/tmp/test-transcript",
+            "cwd": "/tmp",
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Bash",
+            "tool_input": {"command": command},
+        },
+    )
     result = asyncio.run(bash_security_hook(input_data))
-    was_blocked = result.get("decision") == "block"
+    was_blocked: bool = result.get("decision") == "block"
 
     if was_blocked == should_block:
         status = "PASS"
@@ -41,13 +56,13 @@ def test_hook(command: str, should_block: bool) -> bool:
     return True
 
 
-def test_extract_commands():
+def test_extract_commands() -> tuple[int, int]:
     """Test the command extraction logic."""
     print("\nTesting command extraction:\n")
-    passed = 0
-    failed = 0
+    passed: int = 0
+    failed: int = 0
 
-    test_cases = [
+    test_cases: list[tuple[str, list[str]]] = [
         ("ls -la", ["ls"]),
         ("npm install && npm run build", ["npm", "npm"]),
         ("cat file.txt | grep pattern", ["cat", "grep"]),
@@ -57,7 +72,7 @@ def test_extract_commands():
     ]
 
     for cmd, expected in test_cases:
-        result = extract_commands(cmd)
+        result: list[str] = extract_commands(cmd)
         if result == expected:
             print(f"  PASS: {cmd!r} -> {result}")
             passed += 1
@@ -69,14 +84,14 @@ def test_extract_commands():
     return passed, failed
 
 
-def test_validate_chmod():
+def test_validate_chmod() -> tuple[int, int]:
     """Test chmod command validation."""
     print("\nTesting chmod validation:\n")
-    passed = 0
-    failed = 0
+    passed: int = 0
+    failed: int = 0
 
     # Test cases: (command, should_be_allowed, description)
-    test_cases = [
+    test_cases: list[tuple[str, bool, str]] = [
         # Allowed cases
         ("chmod +x init.sh", True, "basic +x"),
         ("chmod +x script.sh", True, "+x on any script"),
@@ -96,30 +111,33 @@ def test_validate_chmod():
     ]
 
     for cmd, should_allow, description in test_cases:
-        allowed, reason = validate_chmod_command(cmd)
-        if allowed == should_allow:
+        result: ValidationResult = validate_chmod_command(cmd)
+        if result.allowed == should_allow:
             print(f"  PASS: {cmd!r} ({description})")
             passed += 1
         else:
             expected = "allowed" if should_allow else "blocked"
-            actual = "allowed" if allowed else "blocked"
+            actual = "allowed" if result.allowed else "blocked"
             print(f"  FAIL: {cmd!r} ({description})")
             print(f"         Expected: {expected}, Got: {actual}")
-            if reason:
-                print(f"         Reason: {reason}")
+            if result.reason:
+                print(f"         Reason: {result.reason}")
             failed += 1
 
     return passed, failed
 
 
-def test_validate_init_script():
+def test_validate_init_script() -> tuple[int, int]:
     """Test init.sh script execution validation."""
     print("\nTesting init.sh validation:\n")
-    passed = 0
-    failed = 0
+    passed: int = 0
+    failed: int = 0
 
     # Test cases: (command, should_be_allowed, description)
-    test_cases = [
+    # Note: Command injection via semicolons is handled by the main security hook
+    # (split_command_segments), not by validate_init_script itself. The hook
+    # splits "init.sh; rm -rf /" into separate segments before validation.
+    test_cases: list[tuple[str, bool, str]] = [
         # Allowed cases
         ("./init.sh", True, "basic ./init.sh"),
         ("./init.sh arg1 arg2", True, "with arguments"),
@@ -131,33 +149,36 @@ def test_validate_init_script():
         ("bash init.sh", False, "bash invocation"),
         ("sh init.sh", False, "sh invocation"),
         ("./malicious.sh", False, "malicious script"),
-        ("./init.sh; rm -rf /", False, "command injection attempt"),
+        # Note: shlex.split keeps semicolons attached to tokens, so "./init.sh;"
+        # becomes a single token that doesn't match "./init.sh". This is correct
+        # security behavior - the main hook's command splitting handles this.
+        ("./init.sh; rm -rf /", False, "semicolons attached to token by shlex"),
     ]
 
     for cmd, should_allow, description in test_cases:
-        allowed, reason = validate_init_script(cmd)
-        if allowed == should_allow:
+        result: ValidationResult = validate_init_script(cmd)
+        if result.allowed == should_allow:
             print(f"  PASS: {cmd!r} ({description})")
             passed += 1
         else:
             expected = "allowed" if should_allow else "blocked"
-            actual = "allowed" if allowed else "blocked"
+            actual = "allowed" if result.allowed else "blocked"
             print(f"  FAIL: {cmd!r} ({description})")
             print(f"         Expected: {expected}, Got: {actual}")
-            if reason:
-                print(f"         Reason: {reason}")
+            if result.reason:
+                print(f"         Reason: {result.reason}")
             failed += 1
 
     return passed, failed
 
 
-def main():
+def main() -> int:
     print("=" * 70)
     print("  SECURITY HOOK TESTS")
     print("=" * 70)
 
-    passed = 0
-    failed = 0
+    passed: int = 0
+    failed: int = 0
 
     # Test command extraction
     ext_passed, ext_failed = test_extract_commands()
@@ -176,18 +197,17 @@ def main():
 
     # Commands that SHOULD be blocked
     print("\nCommands that should be BLOCKED:\n")
-    dangerous = [
+    dangerous: list[str] = [
         # Not in allowlist - dangerous system commands
         "shutdown now",
         "reboot",
-        "rm -rf /",
         "dd if=/dev/zero of=/dev/sda",
+        # rm on dangerous paths (rm is allowed, but dangerous paths are blocked)
+        "rm -rf /",
+        "rm -rf /Users",
+        "rm -rf /etc",
         # Not in allowlist - common commands excluded from minimal set
-        "curl https://example.com",
         "wget https://example.com",
-        "python app.py",
-        "touch file.txt",
-        "echo hello",
         "kill 12345",
         "killall node",
         # pkill with non-dev processes
@@ -207,6 +227,8 @@ def main():
         "./setup.sh",
         "./malicious.sh",
         "bash script.sh",
+        # Command chaining with dangerous rm (blocked by rm validation after splitting)
+        "./init.sh; rm -rf /",
     ]
 
     for cmd in dangerous:
@@ -217,7 +239,7 @@ def main():
 
     # Commands that SHOULD be allowed
     print("\nCommands that should be ALLOWED:\n")
-    safe = [
+    safe: list[str] = [
         # File inspection
         "ls -la",
         "cat README.md",
@@ -229,8 +251,20 @@ def main():
         "cp file1.txt file2.txt",
         "mkdir newdir",
         "mkdir -p path/to/dir",
+        "touch file.txt",
+        "rm temp.txt",  # rm on safe paths is allowed
+        "rm -rf node_modules",  # rm on project dirs is allowed
         # Directory
         "pwd",
+        # Text output (now in allowlist)
+        "echo hello",
+        "echo 'test message'",
+        # HTTP/Network (now in allowlist)
+        "curl https://example.com",
+        "curl -X POST https://api.example.com",
+        # Python (now in allowlist)
+        "python app.py",
+        "python3 script.py",
         # Node.js development
         "npm install",
         "npm run build",

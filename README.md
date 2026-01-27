@@ -1,17 +1,30 @@
-# Autonomous Coding Agent Demo (Linear-Integrated)
+# Autonomous Coding Agent Demo (Multi-Agent Orchestration)
 
-A minimal harness demonstrating long-running autonomous coding with the Claude Agent SDK. This demo implements a two-agent pattern (initializer + coding agent) with **Linear as the core project management system** for tracking all work.
+A minimal harness demonstrating long-running autonomous coding with the Claude Agent SDK. This demo implements a multi-agent orchestrator pattern where specialized agents (Linear, Coding, GitHub, Slack) collaborate through a central orchestrator to build complete applications.
 
 ## Key Features
 
-- **Linear Integration**: All work is tracked as Linear issues, not local files
-- **Real-time Visibility**: Watch agent progress directly in your Linear workspace
-- **Session Handoff**: Agents communicate via Linear comments, not text files
-- **Two-Agent Pattern**: Initializer creates Linear project & issues, coding agents implement them
+- **Multi-Agent Orchestration**: Orchestrator delegates to specialized agents (Linear, Coding, GitHub, Slack)
+- **Linear Integration**: All work tracked as Linear issues with real-time status updates
+- **GitHub Integration**: Optional automatic commit and PR creation via Arcade MCP
+- **Slack Notifications**: Optional progress updates to Slack channels
+- **Configurable Output**: Projects created in isolated directories with separate git repos
 - **Browser Testing**: Puppeteer MCP for UI verification
-- **Claude Opus 4.5**: Uses Claude's most capable model by default
+- **Model Configuration**: Per-agent model selection (Haiku, Sonnet, or Opus)
 
 ## Prerequisites
+
+### 0. Set Up Python Virtual Environment (Recommended)
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate  # On macOS/Linux
+# or
+venv\Scripts\activate  # On Windows
+```
 
 ### 1. Install Claude Code CLI and Python SDK
 
@@ -25,109 +38,134 @@ pip install -r requirements.txt
 
 ### 2. Set Up Authentication
 
-You need two authentication tokens:
-
-**Claude Code OAuth Token:**
+**Arcade API Configuration:**
 ```bash
-# Generate the token using Claude Code CLI
-claude setup-token
+# Get your API key from: https://api.arcade.dev/dashboard/api-keys
+export ARCADE_API_KEY='arc_xxxxxxxxxxxxx'
 
-# Set the environment variable
-export CLAUDE_CODE_OAUTH_TOKEN='your-oauth-token-here'
-```
+# Create a gateway at: https://api.arcade.dev/dashboard/mcp-gateways
+# Add Linear, GitHub (optional), and Slack (optional) tools to your gateway
+export ARCADE_GATEWAY_SLUG='your-gateway-slug'
 
-**Linear API Key:**
-```bash
-# Get your API key from: https://linear.app/YOUR-TEAM/settings/api
-export LINEAR_API_KEY='lin_api_xxxxxxxxxxxxx'
+# Your email for user tracking
+export ARCADE_USER_ID='you@example.com'
+
+# Authorize Arcade tools (run once)
+python authorize_arcade.py
 ```
 
 ### 3. Verify Installation
 
 ```bash
 claude --version  # Should be latest version
-pip show claude-code-sdk  # Check SDK is installed
+pip show claude-agent-sdk  # Check SDK is installed
 ```
 
 ## Quick Start
 
 ```bash
-python autonomous_agent_demo.py --project-dir ./my_project
-```
+# Basic usage - creates project in ./generations/my-app/
+uv run python autonomous_agent_demo.py --project-dir my-app
 
-For testing with limited iterations:
-```bash
-python autonomous_agent_demo.py --project-dir ./my_project --max-iterations 3
+# Specify custom output location
+uv run python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
+
+# Limit iterations for testing
+uv run python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
+
+# Use Opus for orchestrator (more capable but higher cost)
+uv run python autonomous_agent_demo.py --project-dir my-app --model opus
 ```
 
 ## How It Works
 
-### Linear-Centric Workflow
+### Multi-Agent Orchestration
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    LINEAR-INTEGRATED WORKFLOW               │
-├─────────────────────────────────────────────────────────────┤
-│  app_spec.txt ──► Initializer Agent ──► Linear Issues (50) │
-│                                              │               │
-│                    ┌─────────────────────────▼──────────┐   │
-│                    │        LINEAR WORKSPACE            │   │
-│                    │  ┌────────────────────────────┐    │   │
-│                    │  │ Issue: Auth - Login flow   │    │   │
-│                    │  │ Status: Todo → In Progress │    │   │
-│                    │  │ Comments: [session notes]  │    │   │
-│                    │  └────────────────────────────┘    │   │
-│                    └────────────────────────────────────┘   │
-│                                              │               │
-│                    Coding Agent queries Linear              │
-│                    ├── Search for Todo issues               │
-│                    ├── Update status to In Progress         │
-│                    ├── Implement & test with Puppeteer      │
-│                    ├── Add comment with implementation notes│
-│                    └── Update status to Done                │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                   MULTI-AGENT ARCHITECTURE                    │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                    ┌─────────────────┐                        │
+│                    │  ORCHESTRATOR   │  (Haiku by default)    │
+│                    │   Coordinates   │                        │
+│                    └────────┬────────┘                        │
+│                             │                                 │
+│           ┌─────────────────┼─────────────────┐               │
+│           │                 │                 │               │
+│      ┌────▼─────┐    ┌─────▼──────┐   ┌─────▼──────┐        │
+│      │  LINEAR  │    │   CODING   │   │   GITHUB   │        │
+│      │  (Haiku) │    │  (Sonnet)  │   │  (Haiku)   │        │
+│      └──────────┘    └────────────┘   └────────────┘        │
+│           │                 │                 │               │
+│      ┌────▼─────┐          │                 │               │
+│      │  SLACK   │          │                 │               │
+│      │ (Haiku)  │          │                 │               │
+│      └──────────┘          │                 │               │
+│                            │                 │               │
+│     ┌──────────────────────▼─────────────────▼──────┐        │
+│     │         PROJECT OUTPUT (Isolated Git)         │        │
+│     │  GENERATIONS_BASE_PATH/project-name/          │        │
+│     └───────────────────────────────────────────────┘        │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-### Two-Agent Pattern
+### Agent Responsibilities
 
-1. **Initializer Agent (Session 1):**
-   - Reads `app_spec.txt`
-   - Lists teams and creates a new Linear project
-   - Creates 50 Linear issues with detailed test steps
-   - Creates a META issue for session tracking
-   - Sets up project structure, `init.sh`, and git
+1. **Orchestrator Agent:**
+   - Reads project state from `.linear_project.json`
+   - Queries Linear for current status
+   - Decides what to work on next
+   - Delegates to specialized agents via Task tool
+   - Coordinates handoff between agents
 
-2. **Coding Agent (Sessions 2+):**
-   - Queries Linear for highest-priority Todo issue
-   - Runs verification tests on previously completed features
-   - Claims issue (status → In Progress)
-   - Implements the feature
-   - Tests via Puppeteer browser automation
-   - Adds implementation comment to issue
-   - Marks complete (status → Done)
-   - Updates META issue with session summary
+2. **Linear Agent:**
+   - Creates and updates Linear projects and issues
+   - Manages issue status transitions (Todo → In Progress → Done)
+   - Adds comments with implementation details
+   - Maintains META issue for session tracking
 
-### Session Handoff via Linear
+3. **Coding Agent:**
+   - Implements features based on Linear issues
+   - Writes and tests application code
+   - Uses Puppeteer for browser-based UI testing
+   - Validates previously completed features
 
-Instead of local text files, agents communicate through:
-- **Issue Comments**: Implementation details, blockers, context
-- **META Issue**: Session summaries and handoff notes
-- **Issue Status**: Todo / In Progress / Done workflow
+4. **GitHub Agent (Optional):**
+   - Commits code changes to git
+   - Creates branches and pushes to remote
+   - Creates pull requests when features are ready
+   - Requires `GITHUB_REPO` env var
+
+5. **Slack Agent (Optional):**
+   - Posts progress updates to Slack channels
+   - Notifies on feature completion
+   - Requires existing Slack channel (cannot create channels)
 
 ## Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code OAuth token (from `claude setup-token`) | Yes |
-| `LINEAR_API_KEY` | Linear API key for MCP access | Yes |
+| `ARCADE_API_KEY` | Arcade API key from https://api.arcade.dev/dashboard/api-keys | Yes |
+| `ARCADE_GATEWAY_SLUG` | Your Arcade MCP gateway slug | Yes |
+| `ARCADE_USER_ID` | Your email for user tracking | Recommended |
+| `GENERATIONS_BASE_PATH` | Base directory for generated projects (default: ./generations) | No |
+| `GITHUB_REPO` | GitHub repo in format `owner/repo` for auto-push | No |
+| `SLACK_CHANNEL` | Slack channel name (without #) for notifications | No |
+| `ORCHESTRATOR_MODEL` | Model for orchestrator: haiku, sonnet, opus (default: haiku) | No |
+| `LINEAR_AGENT_MODEL` | Model for Linear agent (default: haiku) | No |
+| `CODING_AGENT_MODEL` | Model for coding agent (default: sonnet) | No |
+| `GITHUB_AGENT_MODEL` | Model for GitHub agent (default: haiku) | No |
+| `SLACK_AGENT_MODEL` | Model for Slack agent (default: haiku) | No |
 
 ## Command Line Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--project-dir` | Directory for the project | `./autonomous_demo_project` |
+| `--project-dir` | Project name or path (relative paths go in generations base) | `./autonomous_demo_project` |
+| `--generations-base` | Base directory for all generated projects | `./generations` or `GENERATIONS_BASE_PATH` |
 | `--max-iterations` | Max agent iterations | Unlimited |
-| `--model` | Claude model to use | `claude-opus-4-5-20251101` |
+| `--model` | Orchestrator model: haiku, sonnet, or opus | `haiku` or `ORCHESTRATOR_MODEL` |
 
 ## Project Structure
 
@@ -139,24 +177,32 @@ linear-agent-harness/
 ├── security.py               # Bash command allowlist and validation
 ├── progress.py               # Progress tracking utilities
 ├── prompts.py                # Prompt loading utilities
-├── linear_config.py          # Linear configuration constants
+├── arcade_config.py          # Arcade MCP gateway configuration
+├── authorize_arcade.py       # Arcade authorization flow
+├── agents/
+│   ├── definitions.py        # Agent definitions with model config
+│   └── orchestrator.py       # Orchestrator session runner
 ├── prompts/
 │   ├── app_spec.txt          # Application specification
-│   ├── initializer_prompt.md # First session prompt (creates Linear issues)
-│   └── coding_prompt.md      # Continuation session prompt (works issues)
+│   ├── orchestrator_prompt.md    # Orchestrator agent prompt
+│   ├── linear_agent_prompt.md    # Linear agent prompt
+│   ├── coding_agent_prompt.md    # Coding agent prompt
+│   ├── github_agent_prompt.md    # GitHub agent prompt
+│   └── slack_agent_prompt.md     # Slack agent prompt
 └── requirements.txt          # Python dependencies
 ```
 
 ## Generated Project Structure
 
-After running, your project directory will contain:
+Projects are created in isolated directories with their own git repos:
 
 ```
-my_project/
+generations/my-app/           # Or GENERATIONS_BASE_PATH/my-app/
 ├── .linear_project.json      # Linear project state (marker file)
 ├── app_spec.txt              # Copied specification
 ├── init.sh                   # Environment setup script
 ├── .claude_settings.json     # Security settings
+├── .git/                     # Separate git repository
 └── [application files]       # Generated application code
 ```
 
@@ -164,8 +210,13 @@ my_project/
 
 | Server | Transport | Purpose |
 |--------|-----------|---------|
-| **Linear** | HTTP (Streamable HTTP) | Project management - issues, status, comments |
+| **Arcade Gateway** | HTTP | Unified access to Linear, GitHub, and Slack via Arcade MCP |
 | **Puppeteer** | stdio | Browser automation for UI testing |
+
+The Arcade Gateway provides access to:
+- **Linear**: Project management, issues, status, comments (39 tools)
+- **GitHub**: Repository operations, commits, PRs, branches (46 tools, optional)
+- **Slack**: Messaging and notifications (8 tools, optional)
 
 ## Security Model
 
@@ -173,23 +224,41 @@ This demo uses defense-in-depth security (see `security.py` and `client.py`):
 
 1. **OS-level Sandbox:** Bash commands run in an isolated environment
 2. **Filesystem Restrictions:** File operations restricted to project directory
-3. **Bash Allowlist:** Only specific commands permitted (npm, node, git, etc.)
+3. **Bash Allowlist:** Only specific commands permitted (npm, node, git, curl, rm with validation, etc.)
 4. **MCP Permissions:** Tools explicitly allowed in security settings
+5. **Dangerous Command Validation:** Commands like `rm` are validated to prevent system directory deletion
 
-## Linear Setup
+## Setup Guide
 
-Before running, ensure you have:
+### 1. Arcade Gateway Setup
 
-1. A Linear workspace with at least one team
-2. An API key with read/write permissions (from Settings > API)
-3. The agent will automatically detect your team and create a project
+1. Get API key from https://api.arcade.dev/dashboard/api-keys
+2. Create MCP gateway at https://api.arcade.dev/dashboard/mcp-gateways
+3. Add Linear tools to your gateway (required)
+4. Optionally add GitHub and Slack tools
+5. Run `python authorize_arcade.py` to authorize
 
-The initializer agent will create:
-- A new Linear project named after your app
-- 50 feature issues based on `app_spec.txt`
-- 1 META issue for session tracking and handoff
+### 2. Linear Workspace
 
-All subsequent coding agents will work from this Linear project.
+Ensure you have:
+- A Linear workspace with at least one team
+- Linear tools added to your Arcade gateway
+- The orchestrator will automatically detect your team and create projects
+
+### 3. GitHub Integration (Optional)
+
+To enable GitHub integration:
+1. Create a GitHub repository
+2. Add GitHub tools to your Arcade gateway
+3. Set `GITHUB_REPO=owner/repo-name` in `.env`
+4. The GitHub agent will commit and push code automatically
+
+### 4. Slack Integration (Optional)
+
+To enable Slack notifications:
+1. Create a Slack channel (agents cannot create channels)
+2. Add Slack tools to your Arcade gateway
+3. Set `SLACK_CHANNEL=channel-name` in `.env`
 
 ## Customization
 
@@ -207,29 +276,42 @@ Edit `security.py` to add or remove commands from `ALLOWED_COMMANDS`.
 
 ## Troubleshooting
 
-**"CLAUDE_CODE_OAUTH_TOKEN not set"**
-Run `claude setup-token` to generate a token, then export it.
+**"ARCADE_API_KEY not set"**
+Get your API key from https://api.arcade.dev/dashboard/api-keys and set it in `.env`
 
-**"LINEAR_API_KEY not set"**
-Get your API key from `https://linear.app/YOUR-TEAM/settings/api`
+**"ARCADE_GATEWAY_SLUG not set"**
+Create a gateway at https://api.arcade.dev/dashboard/mcp-gateways and add Linear tools
 
-**"Appears to hang on first run"**
-Normal behavior. The initializer is creating a Linear project and 50 issues with detailed descriptions. Watch for `[Tool: mcp__linear__create_issue]` output.
+**"Authorization required"**
+Run `python authorize_arcade.py` to complete the OAuth flow
 
 **"Command blocked by security hook"**
 The agent tried to run a disallowed command. Add it to `ALLOWED_COMMANDS` in `security.py` if needed.
 
 **"MCP server connection failed"**
-Verify your `LINEAR_API_KEY` is valid and has appropriate permissions. The Linear MCP server uses HTTP transport at `https://mcp.linear.app/mcp`.
+Verify your Arcade API key is valid and your gateway has the required tools configured.
+
+**"GitHub agent requires GITHUB_REPO"**
+If you want GitHub integration, set `GITHUB_REPO=owner/repo-name` in `.env`
+
+**"Slack channel not found"**
+Agents cannot create Slack channels. Create the channel manually and set `SLACK_CHANNEL` to the channel name (without #).
 
 ## Viewing Progress
 
-Open your Linear workspace to see:
-- The project created by the initializer agent
-- All 50 issues organized under the project
-- Real-time status changes (Todo → In Progress → Done)
-- Implementation comments on each issue
-- Session summaries on the META issue
+**Linear Workspace:**
+- View the project created by the orchestrator
+- Watch real-time status changes (Todo → In Progress → Done)
+- Read implementation comments on each issue
+- Check session summaries on the META issue
+
+**GitHub (if configured):**
+- View commits pushed to your repository
+- Review pull requests created by the GitHub agent
+
+**Slack (if configured):**
+- Receive progress updates in your configured channel
+- Get notifications when features are completed
 
 ## License
 
