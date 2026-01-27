@@ -7,3 +7,6 @@ logs/
 .env
 venv
 __pycache__
+
+# User-specific app specification (use app-spec-example.txt as template)
+prompts/app_spec.txt

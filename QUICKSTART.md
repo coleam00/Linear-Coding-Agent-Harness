@@ -8,7 +8,7 @@ Get the multi-agent orchestrator running in 5 minutes.
 - **Node.js 18+** (for Puppeteer MCP server)
 - **Claude CLI** authenticated (`claude login`)
 - **Arcade account** at [arcade.dev](https://arcade.dev)
-- **Linear account** (for issue tracking)
+- **Linear account** at [linear.app](https://linear.app)
 
 Optional:
 - **GitHub account** (for auto-push to repos)
@@ -95,6 +95,15 @@ Follow the links printed in the terminal to complete OAuth for each service.
 
 ## Step 5: Write Your App Spec
 
+Create your app specification file:
+
+```bash
+# Option 1: Copy the example and customize it
+cp prompts/app-spec-example.txt prompts/app_spec.txt
+
+# Option 2: Create your own from scratch
+```
+
 Edit `prompts/app_spec.txt` to describe what you want to build:
 
 ```markdown
@@ -119,7 +128,8 @@ Brief description of the application.
 - How to know it's working
 ```
 
-See `prompts/app-spec-example.txt` for a full example.
+> **Note:** `prompts/app_spec.txt` is gitignored so your custom specs won't be committed.
+> The example file `prompts/app-spec-example.txt` is provided as a reference.
 
 ---
 
