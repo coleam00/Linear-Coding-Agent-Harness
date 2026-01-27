@@ -1,0 +1,54 @@
+# Pomodoro Timer App
+
+A minimal, beautiful pomodoro timer web app.
+
+## Tech Stack
+- Frontend: Vanilla HTML/CSS/JavaScript (single page)
+- No backend required
+- Local storage for persistence
+
+## Features (5 total)
+
+### 1. Timer Display
+- Large, centered countdown timer (25:00 format)
+- Visual progress ring around the timer
+- Clean, minimal design with good typography
+
+### 2. Timer Controls
+- Start/Pause button
+- Reset button
+- Skip to next session button
+
+### 3. Session Types
+- Work session: 25 minutes (default)
+- Short break: 5 minutes
+- Long break: 15 minutes (after 4 work sessions)
+- Auto-switch between sessions
+
+### 4. Session Counter
+- Track completed pomodoros today
+- Visual indicator (dots or circles)
+- Persist count in localStorage
+
+### 5. Audio Notification
+- Play a gentle sound when timer completes
+- Use Web Audio API or simple audio element
+
+## Design Guidelines
+- Dark theme with accent color (tomato red #ff6347)
+- Centered layout, works on mobile
+- Smooth animations for state changes
+- No external dependencies (pure vanilla)
+
+## File Structure
+```
+index.html      - Single HTML file with embedded CSS/JS
+audio/ding.mp3  - Notification sound (or use Web Audio API)
+```
+
+## Success Criteria
+- Timer counts down accurately
+- Sessions auto-advance
+- State persists across page refresh
+- Works on mobile browsers
+- Looks polished and professional
