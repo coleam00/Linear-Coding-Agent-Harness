@@ -9,7 +9,13 @@ This is a multi-agent orchestrator harness using the Claude Agent SDK. A central
 ## Commands
 
 ```bash
-# Install dependencies (Python 3.10+ required)
+# Install uv (Python 3.10+ required)
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
 pip install -r requirements.txt
 
 # Authorize Arcade services (run once, or per-service)

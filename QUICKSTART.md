@@ -5,6 +5,7 @@ Get the multi-agent orchestrator running in 5 minutes.
 ## Prerequisites
 
 - **Python 3.10+** with pip
+- **uv** (Python package runner)
 - **Node.js 18+** (for Puppeteer MCP server)
 - **Claude CLI** authenticated (`claude login`)
 - **Arcade account** at [arcade.dev](https://arcade.dev)
@@ -21,6 +22,12 @@ Optional:
 ```bash
 git clone https://github.com/dynamous/Linear-Coding-Agent-Harness.git
 cd Linear-Coding-Agent-Harness
+
+# Install uv (if not already installed)
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install Python dependencies
 pip install -r requirements.txt
