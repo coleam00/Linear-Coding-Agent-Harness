@@ -7,8 +7,12 @@ Uses Arcade MCP Gateway for Linear + GitHub + Slack integration.
 """
 
 import json
+import platform
 from pathlib import Path
 from typing import Literal, TypedDict, cast
+
+# Platform detection for Windows-specific handling
+IS_WINDOWS = platform.system() == "Windows"
 
 from dotenv import load_dotenv
 
@@ -86,11 +90,23 @@ def create_security_settings() -> SecuritySettings:
     """
     Create the security settings structure.
 
+    Note: Sandbox is disabled on Windows as it requires bubblewrap (Linux)
+    or Seatbelt (macOS). On Windows, we rely on the permission system
+    and security hooks for protection.
+
+    See: https://code.claude.com/docs/en/sandboxing
+
     Returns:
         SecuritySettings with sandbox and permissions configured
     """
+    # Sandbox not available on native Windows
+    sandbox_enabled = not IS_WINDOWS
+
     return SecuritySettings(
-        sandbox=SandboxConfig(enabled=True, autoAllowBashIfSandboxed=True),
+        sandbox=SandboxConfig(
+            enabled=sandbox_enabled,
+            autoAllowBashIfSandboxed=sandbox_enabled,
+        ),
         permissions=PermissionsConfig(
             defaultMode="acceptEdits",
             allow=[
@@ -177,7 +193,11 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     settings_file: Path = write_security_settings(project_dir, security_settings)
 
     print(f"Created security settings at {settings_file}")
-    print("   - Sandbox enabled (OS-level bash isolation)")
+    if IS_WINDOWS:
+        print("   - Sandbox disabled (not available on native Windows)")
+        print("   - Security relies on permission system and bash command allowlist")
+    else:
+        print("   - Sandbox enabled (OS-level bash isolation)")
     print(f"   - Filesystem restricted to: {project_dir.resolve()}")
     print("   - Bash commands restricted to allowlist (see security.py)")
     print(f"   - MCP servers: puppeteer (browser), arcade ({arcade_config['url']})")

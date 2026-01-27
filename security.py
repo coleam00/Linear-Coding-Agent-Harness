@@ -7,9 +7,13 @@ Uses an allowlist approach - only explicitly permitted commands can run.
 """
 
 import os
+import platform
 import re
 import shlex
 from typing import Any, NamedTuple
+
+# Platform detection for Windows-specific handling
+IS_WINDOWS = platform.system() == "Windows"
 
 from claude_agent_sdk import PreToolUseHookInput
 from claude_agent_sdk.types import HookContext, SyncHookJSONOutput
@@ -72,8 +76,43 @@ ALLOWED_COMMANDS: set[str] = {
     "init.sh",  # Init scripts; validated separately
 }
 
+# Windows-specific commands (equivalents to Unix commands)
+WINDOWS_COMMANDS: set[str] = {
+    # File inspection (equivalents to ls, cat, head, tail)
+    "dir",          # ls equivalent
+    "type",         # cat equivalent
+    "more",         # head/less equivalent
+    # File operations
+    "copy",         # cp equivalent
+    "move",         # mv equivalent
+    "del",          # rm equivalent (needs validation like rm)
+    "md",           # mkdir equivalent (mkdir also works)
+    "rd",           # rmdir equivalent
+    "ren",          # rename equivalent
+    "xcopy",        # recursive copy
+    "robocopy",     # robust copy
+    # Directory navigation
+    "chdir",        # Alternative to cd
+    # Environment inspection
+    "where",        # which equivalent
+    "set",          # env equivalent (shows env vars)
+    "ver",          # Version info
+    "systeminfo",   # System information
+    # Process management
+    "tasklist",     # ps equivalent
+    "taskkill",     # pkill equivalent (needs validation)
+}
+
+# Merge Windows commands if on Windows platform
+if IS_WINDOWS:
+    ALLOWED_COMMANDS = ALLOWED_COMMANDS | WINDOWS_COMMANDS
+
 # Commands that need additional validation even when in the allowlist
 COMMANDS_NEEDING_EXTRA_VALIDATION: set[str] = {"pkill", "chmod", "init.sh", "rm"}
+
+# Add Windows-specific commands needing validation
+if IS_WINDOWS:
+    COMMANDS_NEEDING_EXTRA_VALIDATION = COMMANDS_NEEDING_EXTRA_VALIDATION | {"taskkill", "del"}
 
 
 def split_command_segments(command_string: str) -> list[str]:
@@ -424,6 +463,110 @@ def validate_rm_command(command_string: str) -> ValidationResult:
     return ValidationResult(allowed=True)
 
 
+def validate_taskkill_command(command_string: str) -> ValidationResult:
+    """
+    Validate taskkill commands - only allow killing dev-related processes.
+
+    Similar to validate_pkill_command but for Windows.
+
+    Args:
+        command_string: The taskkill command to validate
+
+    Returns:
+        ValidationResult with allowed status and reason if blocked
+    """
+    allowed_process_names: set[str] = {
+        "node.exe",
+        "npm.exe",
+        "npx.exe",
+        "python.exe",
+        "python3.exe",
+        "vite.exe",
+        "next.exe",
+    }
+
+    try:
+        tokens: list[str] = shlex.split(command_string)
+    except ValueError:
+        return ValidationResult(allowed=False, reason="Could not parse taskkill command")
+
+    if not tokens:
+        return ValidationResult(allowed=False, reason="Empty taskkill command")
+
+    # Check for /IM (image name) flag
+    for i, token in enumerate(tokens):
+        if token.upper() == "/IM" and i + 1 < len(tokens):
+            process_name = tokens[i + 1].lower()
+            if process_name in {p.lower() for p in allowed_process_names}:
+                return ValidationResult(allowed=True)
+            return ValidationResult(
+                allowed=False,
+                reason=f"taskkill only allowed for dev processes: {allowed_process_names}",
+            )
+
+    return ValidationResult(allowed=False, reason="taskkill requires /IM flag with process name")
+
+
+def validate_del_command(command_string: str) -> ValidationResult:
+    """
+    Validate del commands - prevent dangerous deletions on Windows.
+
+    Similar to validate_rm_command.
+
+    Args:
+        command_string: The del command to validate
+
+    Returns:
+        ValidationResult with allowed status and reason if blocked
+    """
+    # Dangerous Windows paths that should never be deleted
+    dangerous_paths: set[str] = {
+        "C:\\",
+        "C:\\Windows",
+        "C:\\Windows\\System32",
+        "C:\\Program Files",
+        "C:\\Program Files (x86)",
+        "C:\\Users",
+        "C:\\ProgramData",
+    }
+
+    try:
+        # Use posix=False to preserve Windows backslash paths
+        tokens: list[str] = shlex.split(command_string, posix=False)
+    except ValueError:
+        return ValidationResult(allowed=False, reason="Could not parse del command")
+
+    if not tokens or tokens[0].lower() != "del":
+        return ValidationResult(allowed=False, reason="Not a del command")
+
+    # Check paths (skip flags that start with /)
+    for token in tokens[1:]:
+        # Skip flags like /S, /Q, /F
+        if token.startswith("/") and len(token) <= 3:
+            continue
+
+        # Normalize path for comparison
+        # os.path.isabs works with Windows paths
+        if os.path.isabs(token):
+            normalized = os.path.normpath(token)
+        else:
+            normalized = os.path.abspath(token)
+
+        # Check against dangerous paths (case-insensitive on Windows)
+        for dangerous in dangerous_paths:
+            dangerous_norm = os.path.normpath(dangerous)
+            if normalized.upper().startswith(dangerous_norm.upper()):
+                # Count path depth - use os.sep for platform compatibility
+                depth = normalized.count(os.sep) - dangerous_norm.count(os.sep)
+                if depth <= 1:
+                    return ValidationResult(
+                        allowed=False,
+                        reason=f"del too close to system directory '{dangerous}' is not allowed",
+                    )
+
+    return ValidationResult(allowed=True)
+
+
 def get_command_for_validation(cmd: str, segments: list[str]) -> str:
     """
     Find the specific command segment that contains the given command.
@@ -509,6 +652,14 @@ async def bash_security_hook(
                     return SyncHookJSONOutput(decision="block", reason=result.reason)
             elif cmd == "rm":
                 result = validate_rm_command(cmd_segment)
+                if not result.allowed:
+                    return SyncHookJSONOutput(decision="block", reason=result.reason)
+            elif cmd == "taskkill":
+                result = validate_taskkill_command(cmd_segment)
+                if not result.allowed:
+                    return SyncHookJSONOutput(decision="block", reason=result.reason)
+            elif cmd == "del":
+                result = validate_del_command(cmd_segment)
                 if not result.allowed:
                     return SyncHookJSONOutput(decision="block", reason=result.reason)
 
