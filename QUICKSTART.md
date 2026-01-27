@@ -99,7 +99,7 @@ Create your app specification file:
 
 ```bash
 # Option 1: Copy the example and customize it
-cp prompts/app-spec-example.txt prompts/app_spec.txt
+cp prompts/app_spec_example.txt prompts/app_spec.txt
 
 # Option 2: Create your own from scratch
 ```
@@ -129,7 +129,7 @@ Brief description of the application.
 ```
 
 > **Note:** `prompts/app_spec.txt` is gitignored so your custom specs won't be committed.
-> The example file `prompts/app-spec-example.txt` is provided as a reference.
+> The example file `prompts/app_spec_example.txt` is provided as a reference.
 
 ---
 
