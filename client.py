@@ -31,11 +31,12 @@ from security import bash_security_hook
 PermissionMode = Literal["acceptEdits", "acceptAll", "reject", "ask"]
 
 
-class SandboxConfig(TypedDict):
+class SandboxConfig(TypedDict, total=False):
     """Sandbox configuration for bash command isolation."""
 
     enabled: bool
     autoAllowBashIfSandboxed: bool
+    excludedCommands: list[str]
 
 
 class PermissionsConfig(TypedDict):
@@ -90,7 +91,12 @@ def create_security_settings() -> SecuritySettings:
         SecuritySettings with sandbox and permissions configured
     """
     return SecuritySettings(
-        sandbox=SandboxConfig(enabled=True, autoAllowBashIfSandboxed=True),
+        sandbox=SandboxConfig(
+            enabled=True,
+            autoAllowBashIfSandboxed=True,
+            # Git needs to run outside sandbox to write .git/hooks and .git/config
+            excludedCommands=["git"],
+        ),
         permissions=PermissionsConfig(
             defaultMode="acceptEdits",
             allow=[
