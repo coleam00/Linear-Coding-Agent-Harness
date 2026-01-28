@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 PROMPTS_DIR: Path = Path(__file__).parent / "prompts"
+CLAUDE_AGENTS_DIR: Path = Path(__file__).parent / ".claude" / "agents"
 
 
 def load_prompt(name: str) -> str:
@@ -210,3 +211,48 @@ def copy_spec_to_project(project_dir: Path) -> None:
                 f"Failed to copy app spec to {spec_dest}: {e}\n"
                 f"Check disk space and permissions."
             ) from e
+
+
+def copy_claude_agents_to_project(project_dir: Path) -> None:
+    """
+    Copy .claude/agents/ directory to the project directory.
+
+    Claude Code reads agent definitions from .claude/agents/ relative to its
+    working directory. Since the SDK runs with cwd=project_dir, we need to
+    copy the agent files there for them to be recognized.
+
+    Args:
+        project_dir: Target project directory
+
+    Raises:
+        FileNotFoundError: If source agents directory doesn't exist
+        IOError: If copy operation fails
+    """
+    if not CLAUDE_AGENTS_DIR.exists():
+        raise FileNotFoundError(
+            f"Claude agents directory not found: {CLAUDE_AGENTS_DIR}\n"
+            f"This indicates an incomplete installation."
+        )
+
+    dest_dir: Path = project_dir / ".claude" / "agents"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy all .md files from source to destination
+    agent_files = list(CLAUDE_AGENTS_DIR.glob("*.md"))
+    if not agent_files:
+        raise FileNotFoundError(
+            f"No agent files found in {CLAUDE_AGENTS_DIR}\n"
+            f"Expected .md files defining agents."
+        )
+
+    for source_file in agent_files:
+        dest_file: Path = dest_dir / source_file.name
+        try:
+            shutil.copy(source_file, dest_file)
+        except IOError as e:
+            raise IOError(
+                f"Failed to copy agent file {source_file} to {dest_file}: {e}\n"
+                f"Check disk space and permissions."
+            ) from e
+
+    print(f"Copied {len(agent_files)} agent definitions to {dest_dir}")

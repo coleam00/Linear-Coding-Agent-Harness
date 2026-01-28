@@ -27,6 +27,7 @@ from prompts import (
     get_initializer_task,
     get_continuation_task,
     copy_spec_to_project,
+    copy_claude_agents_to_project,
 )
 
 
@@ -191,6 +192,10 @@ async def run_autonomous_agent(
 
     # Create project directory
     project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy .claude/agents/ to project directory so Claude Code can find them
+    # (Claude Code reads agents from cwd, which is set to project_dir)
+    copy_claude_agents_to_project(project_dir)
 
     # Check if this is a fresh start or continuation
     # We use .linear_project.json as the marker for initialization
