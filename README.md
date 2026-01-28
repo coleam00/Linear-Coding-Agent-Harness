@@ -296,9 +296,30 @@ Edit `prompts/app_spec.txt` to specify a different application to build.
 
 The number of issues created is determined by the features listed in `prompts/app_spec.txt`. Add or remove features to adjust the issue count.
 
-### Modifying Allowed Commands
+### Customizing Security Settings
 
-Edit `security.py` to add or remove commands from `ALLOWED_COMMANDS`.
+Edit `security.py` to adjust security based on your project needs:
+
+**Allowed bash commands:**
+```python
+ALLOWED_COMMANDS = {
+    "ls", "cat", "grep", ...  # Add commands your project needs
+}
+```
+
+**Allowed processes for pkill:**
+```python
+allowed_process_names = {
+    "node", "npm", "python", "python3", ...  # Add processes agents can kill
+}
+```
+
+**Sensitive command validation:**
+- `validate_pkill_command()` - Controls which processes can be killed
+- `validate_rm_command()` - Prevents deletion of critical paths
+- `validate_chmod_command()` - Restricts permission changes
+
+Review these functions if agents are blocked from legitimate operations.
 
 ## Troubleshooting
 
