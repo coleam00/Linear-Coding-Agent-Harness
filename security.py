@@ -251,6 +251,9 @@ def validate_pkill_command(command_string: str) -> ValidationResult:
         "npx",
         "vite",
         "next",
+        "python",
+        "python3",
+        "uv",
     }
 
     try:

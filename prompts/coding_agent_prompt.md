@@ -47,8 +47,18 @@ Write tool: { "file_path": "/path/to/file.js", "content": "file contents here" }
 
 **Every task MUST include screenshot evidence.** The orchestrator will not mark issues Done without it.
 
-Screenshots go in: `screenshots/` directory
-Use descriptive names that identify the feature being tested.
+**How to save screenshots:**
+The Puppeteer MCP `puppeteer_screenshot` tool returns images in the response but doesn't save to disk. To save screenshots as files:
+
+1. Create screenshots directory: `mkdir -p screenshots`
+2. Use `puppeteer_evaluate` to capture and save:
+```javascript
+// Capture screenshot as base64 and save via the response
+const screenshot = await page.screenshot({ encoding: 'base64' });
+```
+3. Or take screenshots with `puppeteer_screenshot` and note them in your report (they're embedded in the response)
+
+**Naming:** Use descriptive names like `feature-name-state.png` (e.g., `timer-running.png`, `login-error.png`)
 
 ---
 
@@ -127,8 +137,8 @@ root_cause: [brief explanation]
 files_changed:
   - [list]
 screenshot_evidence:
-  - screenshots/bug-before.png
-  - screenshots/bug-after-fix.png
+  - [screenshot of broken state]
+  - [screenshot of fixed state]
 verification: [related features still work]
 ```
 
@@ -160,14 +170,33 @@ Use Puppeteer tools to:
 
 ### Starting Dev Server
 
-Always check if server is running first:
-```bash
-# Check if init.sh exists and run it
-ls init.sh && chmod +x init.sh && ./init.sh
+**ALWAYS check before starting:**
 
-# Or start manually
-npm install && npm run dev
+1. **Check if port is already in use:**
+```bash
+lsof -ti:8000  # or whatever port
 ```
+
+2. **Check if server process is running:**
+```bash
+ps aux | grep -E "(node|python|npm)" | grep -v grep
+```
+
+3. **Start server if not running:**
+```bash
+# If init.sh exists, use it
+chmod +x init.sh && ./init.sh
+
+# Otherwise start appropriate server for the tech stack
+# Check app_spec.txt and existing files to determine the right approach
+```
+
+4. **Verify server responds:**
+```bash
+curl -s http://localhost:8000 | head -5
+```
+
+**If port is blocked:** Try a different port (8001, 8002, etc.) rather than trying to kill processes.
 
 ---
 
@@ -177,6 +206,18 @@ npm install && npm run dev
 - Clean, readable code
 - Follow existing patterns in the codebase
 - Test edge cases, not just happy path
+
+---
+
+### Progress Tracking
+
+After completing work, you may update `claude-progress.txt` to log what you did:
+
+1. **Read the file first** (if it exists)
+2. **Append** your progress - don't overwrite previous entries
+3. Include: what you implemented, files changed, test results
+
+This helps future sessions understand what was done.
 
 ---
 
