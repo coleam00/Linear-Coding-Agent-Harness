@@ -26,7 +26,7 @@ from arcade_config import (
 # File tools needed by multiple agents
 FILE_TOOLS: list[str] = ["Read", "Write", "Edit", "Glob"]
 
-PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+PROMPTS_DIR: Path = Path(__file__).parent.parent / "prompts"
 
 # Valid model options for AgentDefinition
 ModelOption = Literal["haiku", "sonnet", "opus", "inherit"]
@@ -73,7 +73,22 @@ def _get_model(agent_name: str) -> ModelOption:
 
 def _load_prompt(name: str) -> str:
     """Load a prompt file from the prompts directory."""
-    return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
+    prompt_path: Path = PROMPTS_DIR / f"{name}.md"
+
+    if not prompt_path.exists():
+        raise FileNotFoundError(
+            f"Agent prompt file not found: {prompt_path}\n"
+            f"Expected prompts directory: {PROMPTS_DIR}\n"
+            f"This may indicate an incomplete installation."
+        )
+
+    try:
+        return prompt_path.read_text(encoding="utf-8")
+    except IOError as e:
+        raise IOError(
+            f"Failed to read agent prompt file {prompt_path}: {e}\n"
+            f"Check file permissions."
+        ) from e
 
 
 OrchestratorModelOption = Literal["haiku", "sonnet", "opus"]

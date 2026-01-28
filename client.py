@@ -78,12 +78,27 @@ BUILTIN_TOOLS: list[str] = [
 ]
 
 # Prompts directory
-PROMPTS_DIR = Path(__file__).parent / "prompts"
+PROMPTS_DIR: Path = Path(__file__).parent / "prompts"
 
 
 def load_orchestrator_prompt() -> str:
     """Load the orchestrator system prompt."""
-    return (PROMPTS_DIR / "orchestrator_prompt.md").read_text(encoding="utf-8")
+    prompt_path: Path = PROMPTS_DIR / "orchestrator_prompt.md"
+
+    if not prompt_path.exists():
+        raise FileNotFoundError(
+            f"Orchestrator prompt not found: {prompt_path}\n"
+            f"This is a critical file required for the client to function.\n"
+            f"Check that the prompts directory is properly installed."
+        )
+
+    try:
+        return prompt_path.read_text(encoding="utf-8")
+    except IOError as e:
+        raise IOError(
+            f"Failed to read orchestrator prompt {prompt_path}: {e}\n"
+            f"Check file permissions."
+        ) from e
 
 
 def create_security_settings() -> SecuritySettings:

@@ -176,9 +176,10 @@ def extract_commands(command_string: str) -> list[str]:
 
         try:
             tokens: list[str] = shlex.split(segment)
-        except ValueError:
+        except ValueError as e:
             # Malformed command (unclosed quotes, etc.)
-            # Return empty to trigger block (fail-safe)
+            # Log the specific error for debugging, then return empty to block
+            print(f"[Security] Command parse error in segment '{segment[:100]}': {e}")
             return []
 
         if not tokens:

@@ -85,9 +85,10 @@ def is_linear_initialized(project_dir: Path) -> bool:
     try:
         state = load_linear_project_state(project_dir)
         return state is not None and state.get("initialized", False)
-    except ValueError:
-        # Corrupted state file - treat as not initialized but log warning
-        print(f"Warning: Corrupted state file in {project_dir}, treating as uninitialized")
+    except ValueError as e:
+        # Corrupted state file - treat as not initialized but log warning with details
+        print(f"Warning: Corrupted state file in {project_dir}: {e}")
+        print("Treating as uninitialized. To fix: delete .linear_project.json or restore from backup.")
         return False
 
 
