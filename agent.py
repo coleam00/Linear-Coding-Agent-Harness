@@ -23,8 +23,6 @@ from agents.definitions import get_model_config_summary
 from client import create_client
 from progress import print_session_header, print_progress_summary, is_linear_initialized
 from prompts import (
-    get_initializer_prompt,
-    get_coding_prompt,
     get_initializer_task,
     get_continuation_task,
     copy_spec_to_project,

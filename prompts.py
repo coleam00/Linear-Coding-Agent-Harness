@@ -45,16 +45,6 @@ def load_prompt(name: str) -> str:
         ) from e
 
 
-def get_initializer_prompt() -> str:
-    """Load the initializer prompt (legacy, for non-orchestrator mode)."""
-    return load_prompt("initializer_prompt")
-
-
-def get_coding_prompt() -> str:
-    """Load the coding agent prompt (legacy, for non-orchestrator mode)."""
-    return load_prompt("coding_prompt")
-
-
 def get_initializer_task(project_dir: Path) -> str:
     """
     Get the task message for initializing a new project.
