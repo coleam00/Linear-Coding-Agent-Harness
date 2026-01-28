@@ -39,9 +39,7 @@ Write tool: { "file_path": "/path/to/file.js", "content": "file contents here" }
 **Every task MUST include screenshot evidence.** The orchestrator will not mark issues Done without it.
 
 Screenshots go in: `screenshots/` directory
-Naming: `screenshots/{issue-id}-{description}.png`
-
-Example: `screenshots/ABC-123-timer-countdown.png`
+Use descriptive names that identify the feature being tested.
 
 ---
 
@@ -62,11 +60,9 @@ The orchestrator will ask you to verify existing features work.
 ```
 verification: PASS or FAIL
 tested_features:
-  - "User can start a new chat" - PASS
-  - "Messages display correctly" - PASS
+  - [feature description] - PASS/FAIL
 screenshots:
-  - screenshots/verification-chat-start.png
-  - screenshots/verification-message-display.png
+  - [list of screenshot paths]
 issues_found: none (or list problems)
 ```
 
@@ -92,19 +88,14 @@ The orchestrator will provide FULL issue context:
 
 **Output format:**
 ```
-issue_id: ABC-123
+issue_id: [issue ID from orchestrator]
 feature_working: true or false
 files_changed:
-  - src/components/Timer.tsx (created)
-  - src/App.tsx (modified)
+  - [list of files created/modified]
 screenshot_evidence:
-  - screenshots/ABC-123-timer-display.png
-  - screenshots/ABC-123-timer-running.png
+  - [list of screenshot paths]
 test_results:
-  - Navigated to /timer - PASS
-  - Clicked start button - PASS
-  - Timer counted down - PASS
-  - Display showed correct format - PASS
+  - [what was tested and outcomes]
 issues_found: none (or list problems)
 ```
 
@@ -138,20 +129,11 @@ verification: [related features still work]
 
 **ALL features MUST be tested through the browser UI.**
 
-```python
-# 1. Start browser and navigate
-mcp__puppeteer__puppeteer_navigate(url="http://localhost:3000")
-
-# 2. Interact with UI elements
-mcp__puppeteer__puppeteer_click(selector="#start-button")
-mcp__puppeteer__puppeteer_fill(selector="#name-input", value="Test User")
-
-# 3. Take screenshot BEFORE and AFTER key actions
-mcp__puppeteer__puppeteer_screenshot()  # Saves to file
-
-# 4. Verify results programmatically if needed
-mcp__puppeteer__puppeteer_evaluate(script="document.querySelector('#result').textContent")
-```
+Use Puppeteer tools to:
+1. Navigate to the app URL
+2. Interact with UI elements (click, fill, select, hover)
+3. Take screenshots as evidence
+4. Verify results programmatically if needed
 
 **DO:**
 - Test through the UI with clicks and keyboard input
