@@ -14,11 +14,14 @@ from typing import cast
 from claude_agent_sdk import PreToolUseHookInput
 
 from security import (
+    IS_WINDOWS,
     ValidationResult,
     bash_security_hook,
     extract_commands,
     validate_chmod_command,
+    validate_del_command,
     validate_init_script,
+    validate_taskkill_command,
 )
 
 
@@ -172,10 +175,108 @@ def test_validate_init_script() -> tuple[int, int]:
     return passed, failed
 
 
+def test_validate_taskkill() -> tuple[int, int]:
+    """Test taskkill command validation (Windows)."""
+    print("\nTesting taskkill validation (Windows):\n")
+    passed: int = 0
+    failed: int = 0
+
+    # Test cases: (command, should_be_allowed, description)
+    test_cases: list[tuple[str, bool, str]] = [
+        # Allowed cases - dev processes
+        ("taskkill /IM node.exe", True, "kill node.exe"),
+        ("taskkill /IM npm.exe", True, "kill npm.exe"),
+        ("taskkill /IM python.exe", True, "kill python.exe"),
+        ("taskkill /F /IM node.exe", True, "force kill node.exe"),
+        # Blocked cases - system/other processes
+        ("taskkill /IM explorer.exe", False, "kill explorer.exe"),
+        ("taskkill /IM system.exe", False, "kill system process"),
+        ("taskkill /IM chrome.exe", False, "kill chrome"),
+        ("taskkill /PID 1234", False, "kill by PID (no /IM)"),
+        ("taskkill", False, "no arguments"),
+    ]
+
+    for cmd, should_allow, description in test_cases:
+        result: ValidationResult = validate_taskkill_command(cmd)
+        if result.allowed == should_allow:
+            print(f"  PASS: {cmd!r} ({description})")
+            passed += 1
+        else:
+            expected = "allowed" if should_allow else "blocked"
+            actual = "allowed" if result.allowed else "blocked"
+            print(f"  FAIL: {cmd!r} ({description})")
+            print(f"         Expected: {expected}, Got: {actual}")
+            if result.reason:
+                print(f"         Reason: {result.reason}")
+            failed += 1
+
+    return passed, failed
+
+
+def test_validate_del() -> tuple[int, int]:
+    """Test del command validation (Windows)."""
+    print("\nTesting del validation (Windows):\n")
+    passed: int = 0
+    failed: int = 0
+
+    # Test cases: (command, should_be_allowed, description)
+    # Note: Paths are relative to test directory, so "safe" paths are allowed
+    test_cases: list[tuple[str, bool, str]] = [
+        # Allowed cases - project files
+        ("del temp.txt", True, "delete temp file"),
+        ("del /Q node_modules", True, "delete node_modules"),
+        # Blocked cases - system paths
+        ("del C:\\Windows\\System32\\file.dll", False, "delete System32 file"),
+        ("del C:\\Users\\test.txt", False, "delete in Users root"),
+        ("del C:\\", False, "delete C: root"),
+    ]
+
+    for cmd, should_allow, description in test_cases:
+        result: ValidationResult = validate_del_command(cmd)
+        if result.allowed == should_allow:
+            print(f"  PASS: {cmd!r} ({description})")
+            passed += 1
+        else:
+            expected = "allowed" if should_allow else "blocked"
+            actual = "allowed" if result.allowed else "blocked"
+            print(f"  FAIL: {cmd!r} ({description})")
+            print(f"         Expected: {expected}, Got: {actual}")
+            if result.reason:
+                print(f"         Reason: {result.reason}")
+            failed += 1
+
+    return passed, failed
+
+
+def test_windows_commands() -> tuple[int, int]:
+    """Test Windows-specific commands are allowed when on Windows."""
+    print(f"\nTesting Windows commands (IS_WINDOWS={IS_WINDOWS}):\n")
+    passed: int = 0
+    failed: int = 0
+
+    # These commands should only be allowed on Windows
+    windows_commands: list[str] = [
+        "dir",
+        "type README.md",
+        "where python",
+        "tasklist",
+    ]
+
+    for cmd in windows_commands:
+        should_allow = IS_WINDOWS
+        if test_hook(cmd, should_block=not should_allow):
+            passed += 1
+        else:
+            failed += 1
+
+    return passed, failed
+
+
 def main() -> int:
     print("=" * 70)
     print("  SECURITY HOOK TESTS")
     print("=" * 70)
+    print(f"  Platform: {'Windows' if IS_WINDOWS else 'Unix/Mac'}")
 
     passed: int = 0
     failed: int = 0
@@ -194,6 +295,20 @@ def main() -> int:
     init_passed, init_failed = test_validate_init_script()
     passed += init_passed
     failed += init_failed
+
+    # Test Windows-specific validations
+    taskkill_passed, taskkill_failed = test_validate_taskkill()
+    passed += taskkill_passed
+    failed += taskkill_failed
+
+    del_passed, del_failed = test_validate_del()
+    passed += del_passed
+    failed += del_failed
+
+    # Test Windows commands in allowlist
+    win_passed, win_failed = test_windows_commands()
+    passed += win_passed
+    failed += win_failed
 
     # Commands that SHOULD be blocked
     print("\nCommands that should be BLOCKED:\n")

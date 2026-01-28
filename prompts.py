@@ -11,17 +11,6 @@ from pathlib import Path
 
 PROMPTS_DIR: Path = Path(__file__).parent / "prompts"
 
-# Agent prompt files to copy to project directory
-AGENT_PROMPT_FILES: list[str] = [
-    "linear_agent_prompt.md",
-    "github_agent_prompt.md",
-    "slack_agent_prompt.md",
-    "coding_agent_prompt.md",
-]
-
-# Directory name where agent prompts are copied in project directory
-AGENT_PROMPTS_DIR_NAME = ".agent_prompts"
-
 
 def load_prompt(name: str) -> str:
     """
@@ -221,43 +210,3 @@ def copy_spec_to_project(project_dir: Path) -> None:
                 f"Failed to copy app spec to {spec_dest}: {e}\n"
                 f"Check disk space and permissions."
             ) from e
-
-
-def copy_agent_prompts_to_project(project_dir: Path) -> None:
-    """
-    Copy agent prompt files to the project directory.
-
-    This is required for the self-loading prompt pattern, where agents read their
-    full instructions from files at runtime. This avoids Windows command line
-    length limits when passing large agent definitions via --agents JSON.
-
-    Args:
-        project_dir: Target project directory
-
-    Raises:
-        FileNotFoundError: If source prompt file doesn't exist
-        IOError: If copy operation fails
-    """
-    prompts_dest_dir: Path = project_dir / AGENT_PROMPTS_DIR_NAME
-    prompts_dest_dir.mkdir(parents=True, exist_ok=True)
-
-    for prompt_file in AGENT_PROMPT_FILES:
-        source: Path = PROMPTS_DIR / prompt_file
-        dest: Path = prompts_dest_dir / prompt_file
-
-        if not source.exists():
-            raise FileNotFoundError(
-                f"Agent prompt file not found: {source}\n"
-                f"This indicates an incomplete installation."
-            )
-
-        # Always copy to ensure prompts are up-to-date
-        try:
-            shutil.copy(source, dest)
-        except IOError as e:
-            raise IOError(
-                f"Failed to copy agent prompt to {dest}: {e}\n"
-                f"Check disk space and permissions."
-            ) from e
-
-    print(f"Copied agent prompts to {prompts_dest_dir}")

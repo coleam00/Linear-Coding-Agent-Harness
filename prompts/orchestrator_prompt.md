@@ -18,7 +18,9 @@ Build the application specified in `app_spec.txt` by coordinating agents to:
 
 ### Available Agents
 
-Use the Task tool to delegate to these specialized agents:
+Use the Task tool to delegate to these specialized agents.
+
+**Important**: These agents are defined in `.claude/agents/` and are available as custom subagent types:
 
 | Agent | Model | Use For |
 |-------|-------|---------|
@@ -26,6 +28,17 @@ Use the Task tool to delegate to these specialized agents:
 | `coding` | sonnet | Write code, test with Puppeteer, provide screenshot evidence |
 | `github` | haiku | Git commits, branches, pull requests |
 | `slack` | haiku | Send progress notifications to users |
+
+**Delegation example**:
+```
+Task(
+  subagent_type: "linear",
+  description: "Update issue status",
+  prompt: "Mark issue ABC-123 as Done with these screenshots: [paths]"
+)
+```
+
+If a custom agent type is not recognized, fall back to `general-purpose` and include the agent's specific instructions in the prompt.
 
 ---
 

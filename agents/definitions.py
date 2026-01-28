@@ -5,13 +5,9 @@ Agent Definitions
 Specialized agent configurations using Claude Agent SDK's AgentDefinition.
 Model selection is configurable via environment variables.
 
-NOTE: Agent prompts use a "self-loading" pattern to avoid Windows command line
-length limits. The SDK passes agents via --agents JSON flag, which exceeds
-Windows' 8000 char limit when full prompts are embedded. Instead, we pass
-minimal prompts that instruct agents to read their full instructions from files
-copied to the project directory.
-
-See: https://github.com/anthropics/claude-code/issues/21423
+NOTE: For Windows compatibility, agents are also defined in .claude/agents/*.md
+files which Claude Code reads natively. This avoids Windows command line length
+limits when passing large agent definitions via --agents JSON flag.
 """
 
 import os
@@ -31,9 +27,6 @@ from arcade_config import (
 FILE_TOOLS: list[str] = ["Read", "Write", "Edit", "Glob"]
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-
-# Directory name where agent prompts are copied in project directory
-AGENT_PROMPTS_DIR_NAME = ".agent_prompts"
 
 # Valid model options for AgentDefinition
 ModelOption = Literal["haiku", "sonnet", "opus", "inherit"]
@@ -78,18 +71,9 @@ def _get_model(agent_name: str) -> ModelOption:
     return "haiku"
 
 
-def _get_self_loading_prompt(agent_name: str, prompt_filename: str) -> str:
-    """
-    Return a minimal prompt that tells the agent to read its full instructions.
-
-    This keeps the agents JSON small enough to fit within Windows command line limits.
-    The full prompt file is copied to the project's .agent_prompts/ directory at startup.
-    """
-    return f"""You are the {agent_name} agent. Your full instructions are in the file:
-.agent_prompts/{prompt_filename}.md
-
-IMPORTANT: Read that file NOW using the Read tool before doing anything else.
-Follow all instructions in that file exactly."""
+def _load_prompt(name: str) -> str:
+    """Load a prompt file from the prompts directory."""
+    return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
 
 
 OrchestratorModelOption = Literal["haiku", "sonnet", "opus"]
@@ -121,8 +105,9 @@ def create_agent_definitions() -> dict[str, AgentDefinition]:
     """
     Create agent definitions with models from environment configuration.
 
-    Uses self-loading prompts to keep JSON size under Windows command line limits.
-    Full prompts are read by agents from .agent_prompts/ directory at runtime.
+    Note: These programmatic definitions are supplemented by .claude/agents/*.md
+    files for Windows compatibility. The filesystem agents are what Claude Code's
+    Task tool uses when spawning subagents.
 
     This is called at import time but reads env vars, so changes to
     environment require reimporting or restarting.
@@ -130,25 +115,25 @@ def create_agent_definitions() -> dict[str, AgentDefinition]:
     return {
         "linear": AgentDefinition(
             description="Manages Linear issues, project status, and session handoff. Use for any Linear operations.",
-            prompt=_get_self_loading_prompt("linear", "linear_agent_prompt"),
+            prompt=_load_prompt("linear_agent_prompt"),
             tools=get_linear_tools() + FILE_TOOLS,
             model=_get_model("linear"),
         ),
         "github": AgentDefinition(
             description="Handles Git commits, branches, and GitHub PRs. Use for version control operations.",
-            prompt=_get_self_loading_prompt("github", "github_agent_prompt"),
+            prompt=_load_prompt("github_agent_prompt"),
             tools=get_github_tools() + FILE_TOOLS + ["Bash"],
             model=_get_model("github"),
         ),
         "slack": AgentDefinition(
             description="Sends Slack notifications to keep users informed. Use for progress updates.",
-            prompt=_get_self_loading_prompt("slack", "slack_agent_prompt"),
+            prompt=_load_prompt("slack_agent_prompt"),
             tools=get_slack_tools() + FILE_TOOLS,
             model=_get_model("slack"),
         ),
         "coding": AgentDefinition(
             description="Writes and tests code. Use when implementing features or fixing bugs.",
-            prompt=_get_self_loading_prompt("coding", "coding_agent_prompt"),
+            prompt=_load_prompt("coding_agent_prompt"),
             tools=get_coding_tools(),
             model=_get_model("coding"),
         ),
