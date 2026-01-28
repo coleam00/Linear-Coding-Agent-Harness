@@ -19,6 +19,7 @@ from claude_agent_sdk import (
     UserMessage,
 )
 
+from agents.definitions import get_model_config_summary
 from client import create_client
 from progress import print_session_header, print_progress_summary, is_linear_initialized
 from prompts import (
@@ -183,11 +184,19 @@ async def run_autonomous_agent(
     print("  AUTONOMOUS CODING AGENT DEMO")
     print("=" * 70)
     print(f"\nProject directory: {project_dir}")
-    print(f"Model: {model}")
     if max_iterations:
         print(f"Max iterations: {max_iterations}")
     else:
         print("Max iterations: Unlimited (will run until completion)")
+
+    # Print model configuration for all agents
+    models = get_model_config_summary()
+    print("\nAgent Models:")
+    print(f"  Orchestrator: {models['orchestrator']}")
+    print(f"  Coding:       {models['coding']}")
+    print(f"  Linear:       {models['linear']}")
+    print(f"  GitHub:       {models['github']}")
+    print(f"  Slack:        {models['slack']}")
     print()
 
     # Create project directory

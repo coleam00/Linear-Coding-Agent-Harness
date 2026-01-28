@@ -163,3 +163,19 @@ LINEAR_AGENT = AGENT_DEFINITIONS["linear"]
 GITHUB_AGENT = AGENT_DEFINITIONS["github"]
 SLACK_AGENT = AGENT_DEFINITIONS["slack"]
 CODING_AGENT = AGENT_DEFINITIONS["coding"]
+
+
+def get_model_config_summary() -> dict[str, str]:
+    """
+    Get a summary of all agent model configurations.
+
+    Returns a dict mapping agent names to their configured models.
+    Useful for displaying configuration at startup.
+    """
+    return {
+        "orchestrator": get_orchestrator_model(),
+        "linear": _get_model("linear"),
+        "coding": _get_model("coding"),
+        "github": _get_model("github"),
+        "slack": _get_model("slack"),
+    }
