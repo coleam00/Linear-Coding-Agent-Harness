@@ -55,7 +55,10 @@ npm install -g puppeteer-mcp-server
    - **Linear** (required)
    - **GitHub** (optional, for auto-push)
    - **Slack** (optional, for notifications)
-4. Copy your gateway slug (e.g., `my-gateway-name`)
+4. **IMPORTANT:** Set Authentication to **"Arcade Headers"** (not OAuth)
+   - This allows the harness to authenticate using your API key in headers
+   - OAuth mode requires interactive browser authentication which doesn't work well with automated agents
+5. Copy your gateway slug (e.g., `my-gateway-name`)
 
 ---
 
@@ -184,6 +187,12 @@ You can interrupt with `Ctrl+C` and resume by running the same command again.
 
 ### "ARCADE_API_KEY not set"
 Make sure your `.env` file exists and contains a valid API key.
+
+### "MCP server needs authentication" or "No such tool available"
+Your Arcade MCP gateway is using OAuth authentication instead of header-based auth:
+1. Go to your gateway settings at [arcade.dev/dashboard/mcp-gateways](https://api.arcade.dev/dashboard/mcp-gateways)
+2. Change Authentication from "OAuth" to **"Arcade Headers"**
+3. Restart Claude Code
 
 ### "Authorization required"
 Re-run `python authorize_arcade.py` to refresh OAuth tokens.
