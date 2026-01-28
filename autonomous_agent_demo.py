@@ -21,10 +21,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from agent import run_autonomous_agent
-
-# Load environment variables from .env file
+# Load environment variables BEFORE importing modules that read them
 load_dotenv()
+
+from agent import run_autonomous_agent
 
 
 # Available Claude 4.5 models
