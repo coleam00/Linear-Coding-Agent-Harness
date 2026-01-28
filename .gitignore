@@ -5,5 +5,7 @@ generations/
 logs/
 
 .env
+.env.tmp
 venv
+venv_linux
 __pycache__
