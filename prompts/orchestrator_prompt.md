@@ -35,11 +35,14 @@ Agents don't share memory. YOU must pass information between them:
 
 ```
 linear agent returns: { issue_id, title, description, test_steps }
-                ↓
+                |
+                v
 YOU pass this to coding agent: "Implement issue ABC-123: [full context]"
-                ↓
+                |
+                v
 coding agent returns: { files_changed, screenshot_evidence, test_results }
-                ↓
+                |
+                v
 YOU pass this to linear agent: "Mark ABC-123 done with evidence: [paths]"
 ```
 
@@ -111,7 +114,7 @@ Ask coding agent:
 - Provide screenshots
 - Report PASS/FAIL
 
-⚠️ **If FAIL: Stop here. Ask coding agent to fix the regression.**
+WARNING: **If FAIL: Stop here. Ask coding agent to fix the regression.**
 
 **Step 4: Implement Feature**
 Pass FULL context to coding agent:
@@ -227,14 +230,14 @@ Use mcp__arcade__Github_CreatePullRequest with:
 
 ### Anti-Patterns to Avoid
 
-❌ "Ask coding agent to check Linear for the next issue"
-✅ "Get issue from linear agent, then pass full context to coding agent"
+BAD: "Ask coding agent to check Linear for the next issue"
+GOOD: "Get issue from linear agent, then pass full context to coding agent"
 
-❌ "Mark issue done" (without screenshot evidence)
-✅ "Mark issue done with screenshots: [paths from coding agent]"
+BAD: "Mark issue done" (without screenshot evidence)
+GOOD: "Mark issue done with screenshots: [paths from coding agent]"
 
-❌ "Implement the feature and test it"
-✅ "Implement: ID=X, Title=Y, Description=Z, TestSteps=[...]"
+BAD: "Implement the feature and test it"
+GOOD: "Implement: ID=X, Title=Y, Description=Z, TestSteps=[...]"
 
-❌ Starting new work when verification failed
-✅ Fix regression first, then re-run verification, then new work
+BAD: Starting new work when verification failed
+GOOD: Fix regression first, then re-run verification, then new work

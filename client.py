@@ -78,8 +78,26 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 
 def load_orchestrator_prompt() -> str:
-    """Load the orchestrator system prompt."""
-    return (PROMPTS_DIR / "orchestrator_prompt.md").read_text(encoding="utf-8")
+    """
+    Return a minimal self-loading prompt for the orchestrator.
+
+    The full orchestrator instructions are copied to .agent_prompts/ at startup.
+    This keeps the command line under Windows' 8000 char limit when combined
+    with the agents JSON.
+    """
+    return """You are the ORCHESTRATOR agent coordinating specialized agents to build applications.
+
+IMPORTANT: Your full instructions are in the file:
+.agent_prompts/orchestrator_prompt.md
+
+Read that file NOW using the Read tool before doing anything else.
+Follow all instructions in that file exactly.
+
+Quick reference (read full file for details):
+- Delegate to: linear, coding, github, slack agents via Task tool
+- ALWAYS pass full context between agents (they don't share memory)
+- MANDATORY: Run verification test before new work
+- MANDATORY: Require screenshot evidence before marking issues Done"""
 
 
 def create_security_settings() -> SecuritySettings:
@@ -186,15 +204,15 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     # Load orchestrator prompt as system prompt
     orchestrator_prompt = load_orchestrator_prompt()
 
+    # NOTE: We don't set allowed_tools here because:
+    # 1. MCP servers automatically expose their tools
+    # 2. The full tools list is ~3700 chars which exceeds Windows cmd limit
+    #    when combined with agents JSON (~5600 chars)
+    # 3. Permissions are controlled via security_settings and hooks instead
     return ClaudeSDKClient(
         options=ClaudeAgentOptions(
             model=model,
             system_prompt=orchestrator_prompt,
-            allowed_tools=[
-                *BUILTIN_TOOLS,
-                *PUPPETEER_TOOLS,
-                *ALL_ARCADE_TOOLS,
-            ],
             mcp_servers=cast(
                 dict[str, McpServerConfig],
                 {

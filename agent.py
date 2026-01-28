@@ -6,9 +6,22 @@ Core agent interaction functions for running autonomous coding sessions.
 """
 
 import asyncio
+import sys
 import traceback
 from pathlib import Path
 from typing import Literal, NamedTuple
+
+
+def safe_print(text: str, **kwargs) -> None:
+    """Print text safely, handling Unicode on Windows console."""
+    try:
+        print(text, **kwargs)
+    except UnicodeEncodeError:
+        # Replace unencodable characters with ASCII alternatives
+        safe_text = text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(
+            sys.stdout.encoding or 'utf-8'
+        )
+        print(safe_text, **kwargs)
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -87,14 +100,14 @@ async def run_agent_session(
                 for block in msg.content:
                     if isinstance(block, TextBlock):
                         response_text += block.text
-                        print(block.text, end="", flush=True)
+                        safe_print(block.text, end="", flush=True)
                     elif isinstance(block, ToolUseBlock):
-                        print(f"\n[Tool: {block.name}]", flush=True)
+                        safe_print(f"\n[Tool: {block.name}]", flush=True)
                         input_str: str = str(block.input)
                         if len(input_str) > 200:
-                            print(f"   Input: {input_str[:200]}...", flush=True)
+                            safe_print(f"   Input: {input_str[:200]}...", flush=True)
                         else:
-                            print(f"   Input: {input_str}", flush=True)
+                            safe_print(f"   Input: {input_str}", flush=True)
 
             # Handle UserMessage (tool results)
             elif isinstance(msg, UserMessage):
@@ -105,14 +118,14 @@ async def run_agent_session(
 
                         # Check if command was blocked by security hook
                         if "blocked" in str(result_content).lower():
-                            print(f"   [BLOCKED] {result_content}", flush=True)
+                            safe_print(f"   [BLOCKED] {result_content}", flush=True)
                         elif is_error:
                             # Show errors (truncated)
                             error_str: str = str(result_content)[:500]
-                            print(f"   [Error] {error_str}", flush=True)
+                            safe_print(f"   [Error] {error_str}", flush=True)
                         else:
                             # Tool succeeded - just show brief confirmation
-                            print("   [Done]", flush=True)
+                            safe_print("   [Done]", flush=True)
 
         print("\n" + "-" * 70 + "\n")
         return SessionResult(status=SESSION_CONTINUE, response=response_text)

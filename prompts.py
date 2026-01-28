@@ -17,6 +17,7 @@ AGENT_PROMPT_FILES: list[str] = [
     "github_agent_prompt.md",
     "slack_agent_prompt.md",
     "coding_agent_prompt.md",
+    "orchestrator_prompt.md",  # Orchestrator also uses self-loading pattern
 ]
 
 # Directory name where agent prompts are copied in project directory
