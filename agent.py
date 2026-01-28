@@ -27,6 +27,7 @@ from prompts import (
     get_initializer_task,
     get_continuation_task,
     copy_spec_to_project,
+    copy_agent_prompts_to_project,
 )
 
 
@@ -191,6 +192,10 @@ async def run_autonomous_agent(
 
     # Create project directory
     project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy agent prompts to project (required for self-loading prompt pattern)
+    # This must happen before any agent invocation so agents can read their instructions
+    copy_agent_prompts_to_project(project_dir)
 
     # Check if this is a fresh start or continuation
     # We use .linear_project.json as the marker for initialization

@@ -1,4 +1,4 @@
 # Requires Python 3.10+
-claude-agent-sdk>=0.1.23
+claude-agent-sdk>=0.1.24
 python-dotenv>=1.0.0
 arcadepy>=1.10.0
