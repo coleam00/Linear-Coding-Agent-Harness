@@ -2,6 +2,8 @@
 
 A minimal harness demonstrating long-running autonomous coding with the Claude Agent SDK. This demo implements a multi-agent orchestrator pattern where specialized agents (Linear, Coding, GitHub, Slack) collaborate through a central orchestrator to build complete applications.
 
+> **Note:** This project requires macOS or Linux. Windows users must use WSL (Windows Subsystem for Linux).
+
 ## Key Features
 
 - **Multi-Agent Orchestration**: Orchestrator delegates to specialized agents (Linear, Coding, GitHub, Slack)
@@ -16,66 +18,89 @@ A minimal harness demonstrating long-running autonomous coding with the Claude A
 
 ### 0. Set Up Python Virtual Environment (Recommended)
 
+**Option A: Using uv (recommended)**
 ```bash
 # Create virtual environment
-python3 -m venv venv
+uv venv
 
 # Activate it
-source venv/bin/activate  # On macOS/Linux
-# or
-venv\Scripts\activate  # On Windows
+source .venv/bin/activate
+```
+
+**Option B: Using standard Python**
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate it
+source .venv/bin/activate
 ```
 
 ### 1. Install Claude Code CLI and Python SDK
 
 ```bash
-# Install Claude Code CLI (latest version required)
-npm install -g @anthropic-ai/claude-code
+# Install Claude Code CLI
+curl -fsSL https://claude.ai/install.sh | bash
 
 # Install Python dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt  # If using uv
+pip install -r requirements.txt     # If using standard Python
 ```
 
-### 2. Set Up Authentication
+### 2. Set Up Environment
 
-**Arcade API Configuration:**
 ```bash
-# Get your API key from: https://api.arcade.dev/dashboard/api-keys
-export ARCADE_API_KEY='arc_xxxxxxxxxxxxx'
+# Copy the example environment file
+cp .env.example .env
+```
 
-# Create a gateway at: https://api.arcade.dev/dashboard/mcp-gateways
-# Add Linear, GitHub (optional), and Slack (optional) tools to your gateway
-export ARCADE_GATEWAY_SLUG='your-gateway-slug'
+Edit `.env` and configure:
 
-# Your email for user tracking
-export ARCADE_USER_ID='you@example.com'
+**Required:**
+1. **ARCADE_API_KEY** - Get from https://api.arcade.dev/dashboard/api-keys
+2. **ARCADE_GATEWAY_SLUG** - Create a gateway at https://api.arcade.dev/dashboard/mcp-gateways, configure the Auth Header setting, and add Linear, GitHub, and Slack tools
+3. **ARCADE_USER_ID** - Your email for user tracking
+4. **GENERATIONS_BASE_PATH** - Set to a directory **outside** this repo (e.g., `~/projects/ai-generations`). This is required for git/GitHub operations to work correctly.
 
-# Authorize Arcade tools (run once)
-python authorize_arcade.py
+**Recommended:**
+5. **GITHUB_REPO** - Create a new GitHub repository and set this to `owner/repo-name`. The agent will commit and push code here.
+6. **SLACK_CHANNEL** - Create a Slack channel (agents cannot create channels) and set this to the channel name without `#`.
+
+Then authorize Arcade tools:
+```bash
+uv run python authorize_arcade.py  # If using uv
+python3 authorize_arcade.py        # If using standard Python
 ```
 
 ### 3. Verify Installation
 
 ```bash
-claude --version  # Should be latest version
-pip show claude-agent-sdk  # Check SDK is installed
+claude --version              # Should be latest version
+uv pip show claude-agent-sdk  # If using uv
+pip show claude-agent-sdk     # If using standard Python
 ```
 
 ## Quick Start
 
+**1. Set up your app specification:**
 ```bash
-# Basic usage - creates project in ./generations/my-app/
-uv run python autonomous_agent_demo.py --project-dir my-app
+# Copy the example spec or create your own
+cp prompts/app_spec_example.txt prompts/app_spec.txt
 
-# Specify custom output location
-uv run python autonomous_agent_demo.py --generations-base ~/projects/ai --project-dir my-app
+# Edit the spec to describe the application you want to build
+```
+
+**2. Run the orchestrator:**
+```bash
+# Basic usage
+uv run python autonomous_agent_demo.py --project-dir my-app
 
 # Limit iterations for testing
 uv run python autonomous_agent_demo.py --project-dir my-app --max-iterations 3
 
-# Use Opus for orchestrator (more capable but higher cost)
-uv run python autonomous_agent_demo.py --project-dir my-app --model opus
 ```
+
+**Model configuration:** Edit the model settings in `.env`. We recommend Haiku for Linear, Slack, and GitHub agents. For more capable (but higher cost) results, use Opus for the orchestrator and coding agents.
 
 ## How It Works
 
@@ -149,9 +174,9 @@ uv run python autonomous_agent_demo.py --project-dir my-app --model opus
 | `ARCADE_API_KEY` | Arcade API key from https://api.arcade.dev/dashboard/api-keys | Yes |
 | `ARCADE_GATEWAY_SLUG` | Your Arcade MCP gateway slug | Yes |
 | `ARCADE_USER_ID` | Your email for user tracking | Recommended |
-| `GENERATIONS_BASE_PATH` | Base directory for generated projects (default: ./generations) | No |
-| `GITHUB_REPO` | GitHub repo in format `owner/repo` for auto-push | No |
-| `SLACK_CHANNEL` | Slack channel name (without #) for notifications | No |
+| `GENERATIONS_BASE_PATH` | Base directory for generated projects (must be outside this repo) | Yes |
+| `GITHUB_REPO` | GitHub repo in format `owner/repo` for auto-push | Recommended |
+| `SLACK_CHANNEL` | Slack channel name (without #) for notifications | Recommended |
 | `ORCHESTRATOR_MODEL` | Model for orchestrator: haiku, sonnet, opus (default: haiku) | No |
 | `LINEAR_AGENT_MODEL` | Model for Linear agent (default: haiku) | No |
 | `CODING_AGENT_MODEL` | Model for coding agent (default: sonnet) | No |
@@ -183,7 +208,8 @@ linear-agent-harness/
 │   ├── definitions.py        # Agent definitions with model config
 │   └── orchestrator.py       # Orchestrator session runner
 ├── prompts/
-│   ├── app_spec.txt          # Application specification
+│   ├── app_spec.txt              # Your application specification
+│   ├── app_spec_example.txt      # Example specification to copy
 │   ├── orchestrator_prompt.md    # Orchestrator agent prompt
 │   ├── linear_agent_prompt.md    # Linear agent prompt
 │   ├── coding_agent_prompt.md    # Coding agent prompt
@@ -234,9 +260,9 @@ This demo uses defense-in-depth security (see `security.py` and `client.py`):
 
 1. Get API key from https://api.arcade.dev/dashboard/api-keys
 2. Create MCP gateway at https://api.arcade.dev/dashboard/mcp-gateways
-3. Add Linear tools to your gateway (required)
-4. Optionally add GitHub and Slack tools
-5. Run `python authorize_arcade.py` to authorize
+3. **Important:** Configure the gateway's Auth Header setting to use your API key for authentication
+4. Add Linear, GitHub, and Slack tools to your gateway
+5. Run `python3 authorize_arcade.py` to complete OAuth authorization for each service
 
 ### 2. Linear Workspace
 
@@ -268,7 +294,7 @@ Edit `prompts/app_spec.txt` to specify a different application to build.
 
 ### Adjusting Issue Count
 
-Edit `prompts/initializer_prompt.md` and change "50 issues" to your desired count.
+The number of issues created is determined by the features listed in `prompts/app_spec.txt`. Add or remove features to adjust the issue count.
 
 ### Modifying Allowed Commands
 
@@ -283,7 +309,7 @@ Get your API key from https://api.arcade.dev/dashboard/api-keys and set it in `.
 Create a gateway at https://api.arcade.dev/dashboard/mcp-gateways and add Linear tools
 
 **"Authorization required"**
-Run `python authorize_arcade.py` to complete the OAuth flow
+Run `python3 authorize_arcade.py` to complete the OAuth flow
 
 **"Command blocked by security hook"**
 The agent tried to run a disallowed command. Add it to `ALLOWED_COMMANDS` in `security.py` if needed.
