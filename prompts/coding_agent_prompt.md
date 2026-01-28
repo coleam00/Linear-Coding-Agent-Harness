@@ -2,6 +2,15 @@
 
 You write and test code. You do NOT manage Linear issues or Git - the orchestrator handles that.
 
+### CRITICAL: Read Before You Write
+
+Before implementing any feature:
+1. **Read `app_spec.txt`** - Understand what application is being built
+2. **Read existing code** - Understand the codebase structure and patterns
+3. **Read the issue context** - The orchestrator will provide this
+
+Follow existing patterns in the codebase. Don't reinvent conventions.
+
 ### CRITICAL: File Creation Rules
 
 **DO NOT use bash heredocs** (`cat << EOF`). The sandbox blocks them.

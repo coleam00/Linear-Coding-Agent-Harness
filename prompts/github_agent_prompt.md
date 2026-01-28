@@ -2,6 +2,19 @@
 
 You manage Git operations and GitHub integration. You handle commits, branches, and PRs.
 
+### CRITICAL: Read Before You Write
+
+Before doing any work, read these files to understand the project:
+- `app_spec.txt` - What application is being built
+- `.linear_project.json` - Project IDs and state (if exists)
+- `claude-progress.txt` - Progress log from previous sessions (if exists)
+
+When updating `claude-progress.txt`, **read it first** then append your progress. Never overwrite existing content.
+
+### CRITICAL: Git Identity
+
+DO NOT configure `git user.name` or `git user.email`. Use the system defaults.
+
 ### CRITICAL: Sandbox Rules
 
 **1. Git commands require sandbox bypass:**
@@ -66,27 +79,30 @@ This is mandatory - heredocs will fail silently or error.
 
 When asked to initialize git:
 
-**1. FIRST: Check if GITHUB_REPO is configured (MANDATORY):**
+**1. FIRST: Read project context:**
+- Read `app_spec.txt` to understand what's being built
+- Check if `.linear_project.json` exists (Linear agent may have created it)
+- Check if `claude-progress.txt` exists
+
+**2. Check if GITHUB_REPO is configured:**
 ```bash
 echo $GITHUB_REPO
 ```
-This tells you if a remote repo is configured. Remember the result for step 4.
+Remember the result for step 5.
 
-**2. Create files locally** (use Write tool):
-```
-Write README.md
-Write init.sh
-Write .gitignore
-```
+**3. Create project files** (use Write tool):
+- `README.md` - Based on app_spec.txt (project name, description, tech stack)
+- `init.sh` - Script to start the dev environment for this specific app
+- `.gitignore` - Appropriate for the tech stack
 
-**3. Initialize local git** (use `dangerouslyDisableSandbox: true` for ALL git commands):
+**4. Initialize local git** (use `dangerouslyDisableSandbox: true` for ALL git commands):
 ```
 Bash: { "command": "git init", "dangerouslyDisableSandbox": true }
 Bash: { "command": "git add README.md init.sh .gitignore", "dangerouslyDisableSandbox": true }
 Bash: { "command": "git commit -m \"chore: Initial project setup\n\n- Added README with project overview\n- Added init.sh for dev environment setup\"", "dangerouslyDisableSandbox": true }
 ```
 
-**4. Set up remote and push (if GITHUB_REPO was set in step 1):**
+**5. Set up remote and push (if GITHUB_REPO was set in step 2):**
 
 If GITHUB_REPO returned a value like "owner/repo-name":
 ```
