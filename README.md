@@ -1,5 +1,7 @@
 # Autonomous Coding Agent Demo (Linear-Integrated)
 
+**Author:** Yacine Zahidi
+
 A minimal harness demonstrating long-running autonomous coding with the Claude Agent SDK. This demo implements a two-agent pattern (initializer + coding agent) with **Linear as the core project management system** for tracking all work.
 
 ## Key Features
